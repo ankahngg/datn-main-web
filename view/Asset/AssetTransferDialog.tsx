@@ -69,6 +69,10 @@ type AssetTransferDialogProps = {
   balances: AssetBalance[]
   availableNfts: NftDeposit[]
   onSubmitTransfer: (values: AssetTransferSubmitValues) => void
+  isSubmitting?: boolean
+  txStatus?: "idle" | "success" | "error" | null
+  txMessage?: string | null
+  onResetStatus?: () => void
 }
 
 function formatAmount(value: number) {
@@ -77,7 +81,15 @@ function formatAmount(value: number) {
   }).format(value)
 }
 
-export function AssetTransferDialog({ balances, availableNfts, onSubmitTransfer }: AssetTransferDialogProps) {
+export function AssetTransferDialog({
+  balances,
+  availableNfts,
+  onSubmitTransfer,
+  isSubmitting,
+  txStatus,
+  txMessage,
+  onResetStatus,
+}: AssetTransferDialogProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const assetTransferSchema = useMemo(() => createAssetTransferSchema(), [])
@@ -118,7 +130,7 @@ export function AssetTransferDialog({ balances, availableNfts, onSubmitTransfer 
     }
   }, [form, selectedAsset])
 
-  const submitDisabled = !form.formState.isValid
+  const submitDisabled = !form.formState.isValid || !!isSubmitting
 
   function applyPercentage(percent: number) {
     const nextAmount = (currentBalance * percent) / 100
@@ -145,6 +157,9 @@ export function AssetTransferDialog({ balances, availableNfts, onSubmitTransfer 
         tokenId: "",
         withdrawNftId: "",
       })
+      if (onResetStatus) {
+        onResetStatus()
+      }
     }
   }
 
@@ -217,7 +232,7 @@ export function AssetTransferDialog({ balances, availableNfts, onSubmitTransfer 
       tokenId: values.asset === "NFT" && values.action === "Gửi" ? values.tokenId?.trim() : undefined,
       withdrawNftId: values.asset === "NFT" && values.action === "Rút" ? values.withdrawNftId : undefined,
     })
-    handleOpenChange(false)
+    // handleOpenChange(false)
   }
 
   return (
@@ -450,6 +465,17 @@ export function AssetTransferDialog({ balances, availableNfts, onSubmitTransfer 
             <Separator className="bg-zinc-800" />
 
             <DialogFooter className="pt-3 bg-background text-foreground">
+              {txMessage && (
+                <p
+                  className={clsx(
+                    "mr-auto text-sm",
+                    txStatus === "success" && "text-emerald-400",
+                    txStatus === "error" && "text-red-400"
+                  )}
+                >
+                  {txMessage}
+                </p>
+              )}
               <Button
                 type="submit"
                 disabled={submitDisabled}
@@ -461,7 +487,7 @@ export function AssetTransferDialog({ balances, availableNfts, onSubmitTransfer 
                   "disabled:text-foreground/50 hover:text-foreground text-foreground/80"
                 )}
               >
-                Xác nhận {action.toLowerCase()}
+                {isSubmitting ? "Đang xử lý..." : `Xác nhận ${action.toLowerCase()}`}
               </Button>
             </DialogFooter>
           </form>

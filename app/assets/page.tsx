@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle, Coins, Wallet } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import { useAccount, useWriteContract } from "wagmi";
+import { parseEther, parseUnits } from "viem";
+import abi from "@/abi.json";
 import {
   Card,
   CardContent,
@@ -11,17 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import WalletRequired from "@/components/wallet-required";
 import { AssetTransferDialog } from "@/view/Asset/AssetTransferDialog";
 import { NftDepositTable } from "@/view/Asset/NftDepositTable";
@@ -32,6 +22,7 @@ import type {
   NftDeposit,
   Transaction,
 } from "@/view/Asset/types";
+import { contractAddress } from "@/config/app.config";
 
 const initialBalances: AssetBalance[] = [
   { symbol: "ETH", name: "Ethereum", amount: 3.742, unit: "ETH" },
@@ -131,18 +122,116 @@ function formatAmount(value: number) {
   }).format(value);
 }
 
+function formatNow(): string {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  return `${day}/${month}/${year} - ${hours}:${minutes}`;
+}
+
 export default function AssetsPage() {
-  const [balances, setBalances] = useState<AssetBalance[]>(initialBalances);
-  const [nftDeposits, setNftDeposits] = useState<NftDeposit[]>(initialNftDeposits);
-  const [history, setHistory] = useState<Transaction[]>(initialHistory);
+  const [balances] = useState<AssetBalance[]>(initialBalances);
+  const [nftDeposits] = useState<NftDeposit[]>(initialNftDeposits);
+  const [history] = useState<Transaction[]>(initialHistory);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(null);
+  const [txMessage, setTxMessage] = useState<string | null>(null);
+
+  const { address } = useAccount();
+  const { writeContractAsync } = useWriteContract();
 
   const availableNfts = useMemo(
     () => nftDeposits.filter((item) => item.status === "Đã deposit"),
     [nftDeposits]
   );
 
-  function handleTransferSubmit(values: AssetTransferSubmitValues) {
-    
+  function resetTxFeedback() {
+    setTxStatus(null);
+    setTxMessage(null);
+  }
+
+  async function handleTransferSubmit(values: AssetTransferSubmitValues) {
+    if (!address) {
+      console.warn("Wallet is not connected");
+      return;
+    }
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+
+    try {
+      const amountStr = values.amount.toString();
+
+      if (values.asset === "ETH") {
+        if (values.action === "Gửi") {
+          await writeContractAsync({
+            address: contractAddress as `0x${string}`,
+            abi: (abi as { abi: unknown[] }).abi,
+            functionName: "depositEther",
+            value: parseEther(amountStr),
+          });
+        } else {
+          await writeContractAsync({
+            address: contractAddress as `0x${string}`,
+            abi: (abi as { abi: unknown[] }).abi,
+            functionName: "withdrawEther",
+            args: [parseEther(amountStr)],
+          });
+        }
+      }
+
+      if (values.asset === "USDC") {
+        const amountUsdc = parseUnits(amountStr, 6); // USDC 6 decimals
+
+        if (values.action === "Gửi") {
+          await writeContractAsync({
+            address: contractAddress as `0x${string}`,
+            abi: (abi as { abi: unknown[] }).abi,
+            functionName: "depositUSDC",
+            args: [amountUsdc],
+          });
+        } else {
+          await writeContractAsync({
+            address: contractAddress as `0x${string}`,
+            abi: (abi as { abi: unknown[] }).abi,
+            functionName: "withdrawUSDC",
+            args: [amountUsdc],
+          });
+        }
+      }
+
+      if (values.asset === "NFT") {
+        if (values.action === "Gửi") {
+          await writeContractAsync({
+            address: contractAddress as `0x${string}`,
+            abi: (abi as { abi: unknown[] }).abi,
+            functionName: "depositNFT",
+            args: [values.nftAddress as `0x${string}`, BigInt(values.tokenId || "0")],
+          });
+        } else if (values.action === "Rút") {
+          await writeContractAsync({
+            address: contractAddress as `0x${string}`,
+            abi: (abi as { abi: unknown[] }).abi,
+            functionName: "withdrawNFT",
+            args: [BigInt(values.withdrawNftId || "0")],
+          });
+        }
+      }
+
+      setTxStatus("success");
+      setTxMessage("Giao dịch thành công.");
+      console.info("Transfer success", values);
+    } catch (error) {
+      console.error("Transfer failed", error);
+      setTxStatus("error");
+      setTxMessage("Hệ thống bận, vui lòng thử lại sau");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -168,6 +257,10 @@ export default function AssetsPage() {
               balances={balances}
               availableNfts={availableNfts}
               onSubmitTransfer={handleTransferSubmit}
+              isSubmitting={isSubmitting}
+              txStatus={txStatus}
+              txMessage={txMessage}
+              onResetStatus={resetTxFeedback}
             />
           </div>
 

@@ -19,6 +19,7 @@ import { HandCoins } from 'lucide-react';
 import { Banknote } from 'lucide-react';
 import { ArrowRightLeft } from 'lucide-react';
 import { Scale } from 'lucide-react';
+import { ActivitySquare } from 'lucide-react';
 import { Boxes } from 'lucide-react';
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -83,6 +84,15 @@ function Leftbar() {
                 <Link href="/transfer" className="font-heading">
                   <ArrowRightLeft className="mr-2" />
                   Chuyển nhượng vay
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/activity" className="font-heading">
+                  <ActivitySquare className="mr-2" />
+                  Hoạt động
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
