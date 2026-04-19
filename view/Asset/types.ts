@@ -5,7 +5,7 @@ export type TxStatus = "Thành công" | "Đang xử lý" | "Thất bại";
 export type AssetBalance = {
   symbol: AssetSymbol;
   name: string;
-  amount: number;
+  amount: string;
   unit: string;
 };
 
@@ -13,7 +13,7 @@ export type Transaction = {
   id: number;
   type: TxType;
   asset: AssetSymbol;
-  amount: number;
+  amount: string;
   time: string;
   status: TxStatus;
   
@@ -30,7 +30,7 @@ export type AssetTransferSubmitValues = {
   withdrawNftId?: string;
 };
 
-export type NftDepositStatus = "Đã deposit" | "Đã rút";
+export type NftDepositStatus = "Đã gửi" | "Đã rút";
 
 export type NftDeposit = {
   id: number;

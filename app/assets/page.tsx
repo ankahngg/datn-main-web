@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle, Coins, Wallet } from "lucide-react";
-import { useAccount, useWriteContract } from "wagmi";
-import { parseEther, parseUnits } from "viem";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { formatEther, formatUnits, parseEther, parseUnits } from "viem";
 import abi from "@/abi.json";
 import {
   Card,
@@ -21,100 +21,49 @@ import type {
   AssetBalance,
   NftDeposit,
   Transaction,
+  NftDepositStatus,
 } from "@/view/Asset/types";
-import { contractAddress } from "@/config/app.config";
+import { contractAddress, usdcAddress } from "@/config/app.config";
+import { useUserBalance, useUserNfts } from "@/hooks/use-user-asset";
+import { FullScreenError } from "@/MyComponent/FullScreenError";
+import { FullScreenLoading } from "@/MyComponent/FullLoadingScreen";
+import { useBankTransactions } from "@/hooks/use-bank-transactions";
 
-const initialBalances: AssetBalance[] = [
-  { symbol: "ETH", name: "Ethereum", amount: 3.742, unit: "ETH" },
-  { symbol: "USDC", name: "USD Coin", amount: 12450.22, unit: "USDC" },
-  { symbol: "NFT", name: "Tài sản số", amount: 7, unit: "NFT" },
-];
+const erc20Abi = [
+  {
+    type: "function",
+    name: "allowance",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "value", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+] as const;
 
-const initialHistory: Transaction[] = [
+const erc721Abi = [
   {
-    id: 1,
-    type: "Gửi",
-    asset: "ETH",
-    amount: 1.2,
-    time: "12/04/2026 - 08:40",
-    status: "Thành công",
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "tokenId", type: "uint256" },
+    ],
+    outputs: [],
   },
-  {
-    id: 2,
-    type: "Rút",
-    asset: "USDC",
-    amount: 700,
-    time: "11/04/2026 - 21:15",
-    status: "Thành công",
-  },
-  {
-    id: 3,
-    type: "Gửi",
-    asset: "NFT",
-    amount: 1,
-    time: "11/04/2026 - 14:02",
-    status: "Đang xử lý",
-  },
-  {
-    id: 4,
-    type: "Rút",
-    asset: "ETH",
-    amount: 0.45,
-    time: "10/04/2026 - 18:30",
-    status: "Thất bại",
-  },
-  {
-    id: 5,
-    type: "Gửi",
-    asset: "USDC",
-    amount: 2500,
-    time: "09/04/2026 - 09:20",
-    status: "Thành công",
-  },
-];
-
-const initialNftDeposits: NftDeposit[] = [
-  {
-    id: 1,
-    nftAddress: "0x8f2c6A89A1b5f6E7D2cC1932fB5aF18d9012c9A1",
-    tokenId: "1024",
-    name: "Lending Vault Genesis",
-    depositedAt: "12/04/2026 - 08:05",
-    status: "Đã deposit",
-  },
-  {
-    id: 2,
-    nftAddress: "0x4B7d11c3eA8f9087b4D0c8A2fEEf9B20c091E2f8",
-    tokenId: "778",
-    name: "Blue Chip NFT",
-    depositedAt: "11/04/2026 - 19:20",
-    status: "Đã deposit",
-  },
-  {
-    id: 3,
-    nftAddress: "0xA1e3D3B4A9f91C4E2d7B6c58f11eA4c0B1234d91",
-    tokenId: "4512",
-    name: "Rare Assets Series",
-    depositedAt: "11/04/2026 - 14:50",
-    status: "Đã rút",
-  },
-  {
-    id: 4,
-    nftAddress: "0x7C90F5B38E61A2fADc13e9b64D2ef0A91D31B2a7",
-    tokenId: "88",
-    name: "Collateral Art NFT",
-    depositedAt: "10/04/2026 - 17:10",
-    status: "Đã deposit",
-  },
-  {
-    id: 5,
-    nftAddress: "0x92F1b7E4C5d6A7e8f9012B3c4D5e6F7089A10cD3",
-    tokenId: "309",
-    name: "Yield NFT Pass",
-    depositedAt: "09/04/2026 - 09:35",
-    status: "Đã rút",
-  },
-];
+] as const;
 
 function formatAmount(value: number) {
   return new Intl.NumberFormat("vi-VN", {
@@ -122,32 +71,106 @@ function formatAmount(value: number) {
   }).format(value);
 }
 
-function formatNow(): string {
-  const now = new Date();
-  const day = String(now.getDate()).padStart(2, "0");
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const year = now.getFullYear();
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-
-  return `${day}/${month}/${year} - ${hours}:${minutes}`;
-}
-
 export default function AssetsPage() {
-  const [balances] = useState<AssetBalance[]>(initialBalances);
-  const [nftDeposits] = useState<NftDeposit[]>(initialNftDeposits);
-  const [history] = useState<Transaction[]>(initialHistory);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(null);
   const [txMessage, setTxMessage] = useState<string | null>(null);
 
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const { refetch: refetchUsdcAllowance } = useReadContract({
+    address: usdcAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: address
+      ? [address as `0x${string}`, contractAddress as `0x${string}`]
+      : undefined,
+    query: {
+      enabled: !!address,
+    },
+  });
+  
+  const {data: userBalance, isLoading: userBalanceLoading, isError: userBalanceIsError, error: userBalanceError} = useUserBalance(useAccount().address);
+  const {data: userNfts, isLoading: userNftsLoading, isError: userNftsIsError, error: userNftsError} = useUserNfts(useAccount().address);
+  const {data: history, isLoading: historyLoading, isError: historyIsError, error: historyError} = useBankTransactions ({
+    filter: {
+      user: address,
+    },
+  });
 
-  const availableNfts = useMemo(
-    () => nftDeposits.filter((item) => item.status === "Đã deposit"),
-    [nftDeposits]
-  );
+  const nftDeposits = useMemo((): NftDeposit[] => {
+    if (userNfts) {
+      return userNfts.content.map((nft) => ({
+        id: nft.id,
+        nftAddress: nft.nftAddress,
+        tokenId: nft.tokenId.toString(),
+        name: `NFT #${nft.nftId}`,
+        depositedAt: new Date(nft.timeCreated).toLocaleString(),
+        status: nft.isWithdrawn ? "Đã rút" : "Đã gửi" as NftDepositStatus,
+      }));
+    }
+    return [];
+  }
+  , [userNfts]);
+  console.log("nftDeposits :", userNfts);
+
+  const availableNfts = useMemo((): NftDeposit[] => {
+    if (userNfts) {
+      return userNfts.content.map((nft) => ({
+        id: nft.id,
+        nftAddress: nft.nftAddress,
+        tokenId: nft.tokenId.toString(),
+        name: `NFT #${nft.nftId}`,
+        depositedAt: new Date(nft.timeCreated).toLocaleString(),
+        status: nft.isWithdrawn ? "Đã rút" : "Đã gửi" as NftDepositStatus,
+      })).filter(nft => nft.status === "Đã gửi"); // Chỉ lấy những NFT chưa gửi để hiển thị trong phần gửi thêm
+    }
+    return [];
+  }, [userNfts]);
+  console.log("availableNfts :", availableNfts);
+
+   const balances = useMemo((): AssetBalance[] => {
+    if (userBalance) {
+      return [
+        { symbol: "ETH", name: "Ethereum", amount: formatEther(userBalance.ethBalance), unit: "ETH" },
+        { symbol: "USDC", name: "USD Coin", amount: formatUnits(userBalance.usdcBalance, 6), unit: "USDC" },
+        { symbol: "NFT", name: "NFTs", amount: availableNfts.length.toString(), unit: "NFT" },
+      ];
+    }
+    return [];
+  }, [userBalance]);
+  console.log("balances :", balances);
+
+  const transactionHistory = useMemo((): Transaction[] => {
+    if (history) {
+      return history.content.map((tx) => ({
+        id: tx.id,
+        type: tx.bankAction === "DEPOSIT" ? "Gửi" : "Rút",
+        asset: tx.bankAsset as "ETH" | "USDC" | "NFT",
+        amount: tx.bankAsset === "USDC" ? formatUnits(tx.amount, 6) : tx.bankAsset === "ETH" ? formatEther(tx.amount) : '1', // NFT luôn hiển thị 1 vì mỗi giao dịch chỉ liên quan đến 1 NFT
+        time: new Date(Number(tx.eventTimestamp) * 1000).toLocaleString(),
+        status: "Thành công", // Giả sử tất cả giao dịch trong lịch sử đều thành công, có thể cần điều chỉnh nếu API trả về trạng thái
+      }));
+    }
+    return [];
+  }
+  , [history]);
+  console.log("transactionHistory :", transactionHistory);
+
+  if (userBalanceIsError || userNftsIsError) {
+    console.error("Error loading user assets", {
+      balanceError: userBalanceError,
+      nftsError: userNftsError,
+    });
+    return <FullScreenError message="Lỗi khi tải dữ liệu tài sản của bạn. Vui lòng thử lại sau." onRetry={() => {}} />;
+  }
+
+  if (userBalanceLoading || userNftsLoading) {
+    return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
+  }
+
+  // return <FullScreenError message="Lỗi khi tải dữ liệu tài sản của bạn. Vui lòng thử lại sau." onRetry={() => {}} />;
+  // return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
 
   function resetTxFeedback() {
     setTxStatus(null);
@@ -166,6 +189,7 @@ export default function AssetsPage() {
     try {
       const amountStr = values.amount.toString();
 
+      // ETH 
       if (values.asset === "ETH") {
         if (values.action === "Gửi") {
           await writeContractAsync({
@@ -184,10 +208,23 @@ export default function AssetsPage() {
         }
       }
 
+      // USDC
       if (values.asset === "USDC") {
         const amountUsdc = parseUnits(amountStr, 6); // USDC 6 decimals
 
         if (values.action === "Gửi") {
+          const { data: currentAllowance } = await refetchUsdcAllowance();
+          const allowance = currentAllowance ?? 0;
+
+          if (allowance < amountUsdc) {
+            await writeContractAsync({
+              address: usdcAddress as `0x${string}`,
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [contractAddress as `0x${string}`, amountUsdc],
+            });
+          }
+
           await writeContractAsync({
             address: contractAddress as `0x${string}`,
             abi: (abi as { abi: unknown[] }).abi,
@@ -204,8 +241,17 @@ export default function AssetsPage() {
         }
       }
 
+      // NFT
       if (values.asset === "NFT") {
         if (values.action === "Gửi") {
+          // Approve NFT for the bank contract before depositing
+          await writeContractAsync({
+            address: values.nftAddress as `0x${string}`,
+            abi: erc721Abi,
+            functionName: "approve",
+            args: [contractAddress as `0x${string}`, BigInt(values.tokenId || "0")],
+          });
+
           await writeContractAsync({
             address: contractAddress as `0x${string}`,
             abi: (abi as { abi: unknown[] }).abi,
@@ -265,7 +311,7 @@ export default function AssetsPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            {balances.map((asset) => (
+            {balances?.map((asset) => (
               <Card key={asset.symbol} className="bg-sidebar">
                 <CardHeader>
                   <CardTitle className="text-xl text-foreground">
@@ -275,7 +321,7 @@ export default function AssetsPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-semibold font-sans text-foreground">
-                    {formatAmount(asset.amount)}
+                    {asset.amount}
                   </p>
                   <p className="text-xs text-muted-foreground italic">
                     {asset.unit} đang có
@@ -301,7 +347,7 @@ export default function AssetsPage() {
             <span>Lịch sử giao dịch</span>
           </div>
 
-          <TransactionHistoryTable history={history} />
+          <TransactionHistoryTable history={transactionHistory} />
         </section>
       </div>
     </WalletRequired>

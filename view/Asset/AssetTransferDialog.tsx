@@ -113,8 +113,9 @@ export function AssetTransferDialog({
   const selectedAsset = form.watch("asset")
   const amountInput = form.watch("amount")
 
-  const currentBalance =
-    balances.find((asset) => asset.symbol === selectedAsset)?.amount ?? 0
+  const currentBalance = Number(
+    balances.find((asset) => asset.symbol === selectedAsset)?.amount ?? '0'
+  )
 
   const parsedAmount = Number(amountInput.replace(/,/g, "."))
   const effectiveAmount = selectedAsset === "NFT" ? 1 : parsedAmount
@@ -209,7 +210,7 @@ export function AssetTransferDialog({
     }
 
     const selectedBalance =
-      balances.find((asset) => asset.symbol === values.asset)?.amount ?? 0
+      Number(balances.find((asset) => asset.symbol === values.asset)?.amount ?? 0)
 
     if (values.action === "Rút" && amount > selectedBalance) {
       form.setError("amount", {

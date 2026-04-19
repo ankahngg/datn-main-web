@@ -1,0 +1,103 @@
+import type { LoanApplication, LoanOffer } from "./types";
+
+export const mockLoanApplications: LoanApplication[] = [
+  {
+    id: 1,
+    borrower: "0x1234...5678",
+    collateralAsset: "ETH",
+    collateralAmount: "10",
+    status: "Chờ xử lý",
+    createdAt: "2026-04-18",
+  },
+  {
+    id: 2,
+    borrower: "0xabcd...ef01",
+    collateralAsset: "NFT",
+    collateralAmount: "1",
+    nftAddress: "0x1ad8...1234",
+    tokenId: 5678,
+    nftName: "Cryptopunk #5678",
+    nftDescription: "A pixel art collectible from the original Cryptopunks collection",
+    nftCollectionName: "Cryptopunks",
+    nftImageUrl: "https://example.com/cryptopunk-5678.png",
+    status: "Đợi chấp nhận",
+    createdAt: "2026-04-17",
+  },
+  {
+    id: 3,
+    borrower: "0xabcd...ef01",
+    collateralAsset: "ETH",
+    collateralAmount: "12500",
+    status: "Đã chấp nhận",
+    createdAt: "2026-04-17",
+    offerId: 5, // Đơn vay này đã có offer được chấp nhận
+    timeStartActive: "2026-04-20", // Giả sử offer được chấp nhận vào ngày 20/04/2026
+  },
+  {
+    id: 4,
+    borrower: "0xabcd...ef01",
+    collateralAsset: "ETH",
+    collateralAmount: "5",
+    status: "Đã hủy",
+    createdAt: "2026-04-17",
+    
+  },
+];
+
+export const mockLoanOffers: LoanOffer[] = [
+  {
+    id: 1,
+    loanApplicationId: 1,
+    offerType: "Offer của người tạo đơn",
+    requester: "0x1234...5678",
+    loanAmount: "5000",
+    interestRate: "5.5",
+    duration: "12",
+    status: "Chờ xử lý",
+    createdAt: "2026-04-18",
+  },
+  {
+    id: 2,
+    loanApplicationId: 1,
+    offerType: "Offer của người cho vay",
+    requester: "0x9090...1122",
+    loanAmount: "4700",
+    interestRate: "6.0",
+    duration: "10",
+    status: "Tạo thành công",
+    createdAt: "2026-04-19",
+  },
+  {
+    id: 3,
+    loanApplicationId: 1,
+    offerType: "Offer của người cho vay",
+    requester: "0x7788...9900",
+    loanAmount: "4800",
+    interestRate: "5.8",
+    duration: "12",
+    status: "Thất bại",
+    createdAt: "2026-04-19",
+  },
+  {
+    id: 4,
+    loanApplicationId: 2,
+    offerType: "Offer của người tạo đơn",
+    requester: "0xabcd...ef01",
+    loanAmount: "7000",
+    interestRate: "4.2",
+    duration: "6",
+    status: "Tạo thành công",
+    createdAt: "2026-04-17",
+  },
+    {
+    id: 5,
+    loanApplicationId: 3,
+    offerType: "Offer của người tạo đơn",
+    requester: "0xabcd...ef01",
+    loanAmount: "12500",
+    interestRate: "5.0",
+    duration: "12",
+    status: "Tạo thành công",
+    createdAt: "2026-04-17",
+  },
+];
