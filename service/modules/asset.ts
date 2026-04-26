@@ -18,7 +18,11 @@ export interface UserNftResponse {
   createdAt: string;
   isWithdrawn?: boolean;
   withdrawnAt?: string;
-  
+  // Optional fields for enriched NFT data
+  nftName?: string;
+  nftDescription?: string;
+  nftCollectionName?: string;
+  nftImageUrl?: string;
 }
 
 const mockBalance: UserBalanceResponse = {
@@ -30,7 +34,7 @@ const mockBalance: UserBalanceResponse = {
 
 export async function getUserBalance(address: string) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
-  if(process.env.NEXT_PUBLIC_DEV === "true") {
+  if(process.env.NEXT_USE_MOCK_DATA === "true") {
     console.log("Returning mock balance for user:", address);
     return mockBalance;
   }
@@ -45,7 +49,7 @@ export async function getUserBalance(address: string) {
 
 export async function getUserNfts(address: string) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
-  if(process.env.NEXT_PUBLIC_DEV === "true") {
+  if(process.env.NEXT_USE_MOCK_DATA === "true") {
     console.log("Returning mock NFTs for user:", address);
     return mockNfts;
   }

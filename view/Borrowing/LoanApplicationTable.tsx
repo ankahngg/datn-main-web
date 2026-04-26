@@ -30,21 +30,23 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import { loanStatusVariantMap, type LoanApplication } from "./types";
+import {
+  loanApplicationStatusLabelMap,
+  loanStatusVariantMap,
+  type LoanApplication,
+} from "./types";
 
 
 
 type LoanApplicationTableProps = {
   applications: LoanApplication[];
-  offerCountByLoanId?: Record<number, number>;
-  onViewOffers?: (loanId: number) => void;
-  onCancelApplication?: (loanId: number) => void;
-  onViewLoan?: (loanId: number) => void;
+  onViewOffers?: (loanApplicationId: bigint) => void;
+  onCancelApplication?: (loanApplicationId: bigint) => void;
+  onViewLoan?: (loanId: bigint) => void;
 };
 
 export function LoanApplicationTable({
   applications,
-  offerCountByLoanId,
   onViewOffers,
   onCancelApplication,
   onViewLoan,
@@ -100,7 +102,7 @@ export function LoanApplicationTable({
           const status = row.original.status;
           return (
             <Badge variant={loanStatusVariantMap[status]}>
-              {status}
+              {loanApplicationStatusLabelMap[status]}
             </Badge>
           );
         },
@@ -113,10 +115,11 @@ export function LoanApplicationTable({
         id: "actions",
         header: () => <span className="text-foreground">Thao tác</span>,
         cell: ({ row }) => {
-          const loan = row.original;
-          const loanId = loan.id;
-          const offerCount = offerCountByLoanId?.[loanId] ?? 0;
-          const isAccepted = loan.status === "Đã chấp nhận";
+          const loanApplication = row.original;
+          const loanApplicationId = loanApplication.applicationId;
+          const offerCount = loanApplication.offerCount || 0;
+          const isCreated = loanApplication.status === "CREATED";
+          const isAccepted = loanApplication.status === "ACCEPTED";
 
           return (
             <DropdownMenu>
@@ -130,15 +133,15 @@ export function LoanApplicationTable({
                 <DropdownMenuLabel className="text-foreground">Hành động</DropdownMenuLabel>
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem onClick={() => onViewOffers?.(loanId)} className="cursor-pointer">
+                <DropdownMenuItem onClick={() => onViewOffers?.(loanApplicationId)} className="cursor-pointer">
                   <Eye className="size-4" />
                   Xem Offer vay ({offerCount})
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  onClick={() => onCancelApplication?.(loanId)}
+                  onClick={() => onCancelApplication?.(loanApplicationId)}
                   variant="destructive"
-                  disabled={isAccepted}
+                  disabled={!isCreated}
                   className="cursor-pointer"
                 >
                   <XCircle className="size-4" />
@@ -146,7 +149,7 @@ export function LoanApplicationTable({
                 </DropdownMenuItem>
 
                 {isAccepted && (
-                  <DropdownMenuItem onClick={() => onViewLoan?.(loanId)} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => onViewLoan?.(loanApplicationId)} className="cursor-pointer">
                     <WalletCards className="size-4" />
                     Xem khoản vay
                   </DropdownMenuItem>
@@ -157,7 +160,7 @@ export function LoanApplicationTable({
         },
       },
     ],
-    [offerCountByLoanId, onCancelApplication, onViewLoan, onViewOffers]
+    [onCancelApplication, onViewLoan, onViewOffers]
   );
 
   const table = useReactTable({
@@ -195,9 +198,12 @@ export function LoanApplicationTable({
             table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
           options: [
             { value: "all", label: "Tất cả trạng thái" },
-            { value: "Chờ xử lý", label: "Chờ xử lý" },
-            { value: "Đợi chấp nhận", label: "Đợi chấp nhận" },
-            { value: "Đã chấp nhận", label: "Đã chấp nhận" },
+            { value: "PENDING_CREATED", label: loanApplicationStatusLabelMap.PENDING_CREATED },
+            { value: "CREATED", label: loanApplicationStatusLabelMap.CREATED },
+            { value: "PENDING_ACCEPTED", label: loanApplicationStatusLabelMap.PENDING_ACCEPTED },
+            { value: "ACCEPTED", label: loanApplicationStatusLabelMap.ACCEPTED },
+            { value: "PENDING_CANCELED", label: loanApplicationStatusLabelMap.PENDING_CANCELED },
+            { value: "CANCELED", label: loanApplicationStatusLabelMap.CANCELED },
           ],
         }}
         onClearFilters={() => {

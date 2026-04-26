@@ -20,14 +20,13 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import type { Transaction, TxStatus } from "./types";
+import {
+  bankActionLabelMap,
+  transactionStatusLabelMap,
+  transactionStatusVariantMap,
+} from "./types";
+import type { Transaction } from "./types";
 import clsx from "clsx";
-
-const statusVariantMap: Record<TxStatus, "success" | "warning" | "danger"> = {
-  "Thành công": "success",
-  "Đang xử lý": "warning",
-  "Thất bại": "danger",
-};
 
 function formatAmount(value: number | string) {
   const numericValue = Number(value);
@@ -87,6 +86,7 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
       {
         accessorKey: "type",
         header: sortableHeader<Transaction>("Loại"),
+        cell: ({ row }) => bankActionLabelMap[row.original.type],
       },
       {
         accessorKey: "asset",
@@ -114,7 +114,7 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
         header: sortableHeader<Transaction>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.status;
-          return <Badge variant={statusVariantMap[status]}>{status}</Badge>;
+          return <Badge variant={transactionStatusVariantMap[status]}>{transactionStatusLabelMap[status]}</Badge>;
         },
       },
     ],
@@ -155,9 +155,9 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
           onChange: (value) => table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
           options: [
             { value: "all", label: "Tất cả trạng thái" },
-            { value: "Thành công", label: "Thành công" },
-            { value: "Đang xử lý", label: "Đang xử lý" },
-            { value: "Thất bại", label: "Thất bại" },
+            { value: "DONE", label: transactionStatusLabelMap.DONE },
+            { value: "PROCESSING", label: transactionStatusLabelMap.PROCESSING },
+            { value: "FAILED", label: transactionStatusLabelMap.FAILED },
           ],
         }}
         onClearFilters={() => {
@@ -222,33 +222,33 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
               </Button>
               <Button
                 className={clsx(
-                  typeFilter === "Gửi"
+                  typeFilter === "DEPOSIT"
                     ? "bg-background text-primary-foreground"
                     : "bg-background/50 text-muted-foreground hover:bg-background/90 hover:text-foreground"
                 )}
-                variant={typeFilter === "Gửi" ? "default" : "outline"}
+                variant={typeFilter === "DEPOSIT" ? "default" : "outline"}
                 size="sm"
                 onClick={() => {
-                  setTypeFilter("Gửi");
+                  setTypeFilter("DEPOSIT");
                   table.setPageIndex(0);
                 }}
               >
-                Gửi
+                {bankActionLabelMap.DEPOSIT}
               </Button>
               <Button
                 className={clsx(
-                  typeFilter === "Rút"
+                  typeFilter === "WITHDRAW"
                     ? "bg-background text-primary-foreground"
                     : "bg-background/50 text-muted-foreground hover:bg-background/90 hover:text-foreground"
                 )}
-                variant={typeFilter === "Rút" ? "default" : "outline"}
+                variant={typeFilter === "WITHDRAW" ? "default" : "outline"}
                 size="sm"
                 onClick={() => {
-                  setTypeFilter("Rút");
+                  setTypeFilter("WITHDRAW");
                   table.setPageIndex(0);
                 }}
               >
-                Rút
+                {bankActionLabelMap.WITHDRAW}
               </Button>
             </div>
           </div>

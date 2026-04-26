@@ -11,6 +11,12 @@ export interface RequestOptions<TBody = unknown> {
   headers?: Record<string, string>;
 }
 
+export interface Pageable {
+  page?: number; // zero-based index as in Spring Pageable
+  size?: number;
+  sort?: string; // e.g. "createdAt,DESC"
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -91,13 +97,14 @@ export async function request<TResponse, TBody = unknown>(
 
   const res = await fetch(url, init);
 
-  if (devMode) {
-    // eslint-disable-next-line no-console
-    console.log("[API Response]", res.status, url);
-  }
-
+  
   const json: ApiResponse<TResponse> = await res.json();
   
+  if (devMode) {
+    // eslint-disable-next-line no-console
+    console.log("[API Response]", url, json.data);
+  }
+
   // ❗ check HTTP error
   if (!res.ok) {
     throw new ApiError({

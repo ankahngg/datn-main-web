@@ -1,23 +1,47 @@
-export type LoanApplicationStatus = "Chờ xử lý" | "Đợi chấp nhận" | "Đã chấp nhận" | "Đã hủy";
-export type LoanOfferStatus = "Chờ xử lý" | "Thất bại" | "Tạo thành công" | "Đã hủy";
+import type {
+  LoanApplicationStatusResponse,
+  LoanOfferStatus as LoanOfferStatusResponse,
+} from "@/service/modules/loan-application";
+
+export type LoanApplicationStatus = LoanApplicationStatusResponse;
+export type LoanOfferStatus = LoanOfferStatusResponse;
 export type LoanOfferType = "Offer của người tạo đơn" | "Offer của người cho vay";
 
 export const loanStatusVariantMap: Record<LoanApplicationStatus, "warning" | "secondary" | "success" | "danger"> = {
-  "Chờ xử lý": "warning",
-  "Đợi chấp nhận": "secondary",
-  "Đã chấp nhận": "success",
-    "Đã hủy": "danger",
+  PENDING_CREATED: "warning",
+  CREATED: "secondary",
+  PENDING_ACCEPTED: "warning",
+  ACCEPTED: "success",
+  PENDING_CANCELED: "warning",
+  CANCELED: "danger",
 };
 
-export const loanRequestStatusVariantMap: Record<LoanOfferStatus, "warning" | "default" | "success" | "danger"> = {
-  "Chờ xử lý": "warning",
-  "Tạo thành công": "success",
-  "Thất bại": "danger",
-    "Đã hủy": "default",
+export const loanRequestStatusVariantMap: Record<LoanOfferStatus, "warning" | "secondary" | "danger"> = {
+  PENDING_CREATED: "warning",
+  CREATED: "secondary",
+  PENDING_CANCELED: "warning",
+  CANCELED: "danger",
+};
+
+export const loanApplicationStatusLabelMap: Record<LoanApplicationStatus, string> = {
+  PENDING_CREATED: "Đang tạo đơn",
+  CREATED: "Đã tạo đơn",
+  PENDING_ACCEPTED: "Đang chấp nhận",
+  ACCEPTED: "Đã chấp nhận",
+  PENDING_CANCELED: "Đang hủy",
+  CANCELED: "Đã hủy",
+};
+
+export const loanOfferStatusLabelMap: Record<LoanOfferStatus, string> = {
+  PENDING_CREATED: "Đang tạo offer",
+  CREATED: "Đã tạo offer",
+  PENDING_CANCELED: "Đang hủy offer",
+  CANCELED: "Đã hủy offer",
 };
 
 export type LoanApplication = {
   id: number;
+  applicationId: bigint;
   borrower: string;
   collateralAsset: string;
   collateralAmount: string;
@@ -27,26 +51,27 @@ export type LoanApplication = {
   totalRepayment?: string;
   // NFT Fields
   nftAddress?: string;
-  tokenId?: number;
-  nftId?: number;
+  tokenId?: bigint;
+  nftId?: bigint;
   nftName?: string;
   nftDescription?: string;
   nftCollectionName?: string;
   nftImageUrl?: string;
   status: LoanApplicationStatus;
   createdAt: string;
-  offerId?: number; // ID của offer đã chấp nhận, nếu có
-  timeStartActive ?: string; // Thời điểm bắt đầu tính lãi, nếu đã có offer được chấp nhận
+  offerId?: bigint; // ID của offer đã chấp nhận, nếu có
+  timeAccepted?: string; // Thời điểm bắt đầu tính lãi, nếu đã có offer được chấp nhận
+  offerCount: bigint; // Số lượng offer đã nhận được
 };
 
 export type LoanOffer = {
   id: number;
-  loanApplicationId: number;
-  offerType: LoanOfferType;
+  offerId: bigint;
+  loanApplicationId: bigint;
   requester: string;
   loanAmount: string;
-  interestRate: string;
-  duration: string;
+  interestRate: bigint;
+  duration: bigint;
   status: LoanOfferStatus;
   createdAt: string;
 };
@@ -71,3 +96,8 @@ export type LoanOfferSubmitValues = {
   interestRate: number;
   loanTerm: string;
 };
+
+export type TransactionResult = {
+  status: "success" | "error";
+  message: string;
+}

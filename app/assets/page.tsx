@@ -65,12 +65,6 @@ const erc721Abi = [
   },
 ] as const;
 
-function formatAmount(value: number) {
-  return new Intl.NumberFormat("vi-VN", {
-    maximumFractionDigits: 3,
-  }).format(value);
-}
-
 export default function AssetsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(null);
@@ -132,7 +126,7 @@ export default function AssetsPage() {
    const balances = useMemo((): AssetBalance[] => {
     if (userBalance) {
       return [
-        { symbol: "ETH", name: "Ethereum", amount: formatEther(userBalance.ethBalance), unit: "ETH" },
+        { symbol: "ETHER", name: "Ethereum", amount: formatEther(userBalance.ethBalance), unit: "ETH" },
         { symbol: "USDC", name: "USD Coin", amount: formatUnits(userBalance.usdcBalance, 6), unit: "USDC" },
         { symbol: "NFT", name: "NFTs", amount: availableNfts.length.toString(), unit: "NFT" },
       ];
@@ -145,11 +139,11 @@ export default function AssetsPage() {
     if (history) {
       return history.content.map((tx) => ({
         id: tx.id,
-        type: tx.bankAction === "DEPOSIT" ? "Gửi" : "Rút",
-        asset: tx.bankAsset as "ETH" | "USDC" | "NFT",
-        amount: tx.bankAsset === "USDC" ? formatUnits(tx.amount, 6) : tx.bankAsset === "ETH" ? formatEther(tx.amount) : '1', // NFT luôn hiển thị 1 vì mỗi giao dịch chỉ liên quan đến 1 NFT
-        time: new Date(Number(tx.eventTimestamp) * 1000).toLocaleString(),
-        status: "Thành công", // Giả sử tất cả giao dịch trong lịch sử đều thành công, có thể cần điều chỉnh nếu API trả về trạng thái
+        type: tx.bankAction,
+        asset: tx.bankAsset,
+        amount: tx.bankAsset === "USDC" ? formatUnits(tx.amount, 6) : tx.bankAsset === "ETHER" ? formatEther(tx.amount) : '1', // NFT luôn hiển thị 1 vì mỗi giao dịch chỉ liên quan đến 1 NFT
+        time: tx.eventTimestamp,
+        status: tx.status,
       }));
     }
     return [];
@@ -190,7 +184,7 @@ export default function AssetsPage() {
       const amountStr = values.amount.toString();
 
       // ETH 
-      if (values.asset === "ETH") {
+      if (values.asset === "ETHER") {
         if (values.action === "Gửi") {
           await writeContractAsync({
             address: contractAddress as `0x${string}`,

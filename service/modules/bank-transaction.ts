@@ -1,24 +1,28 @@
 import { mockBankTransactions } from "@/view/Asset/mock-data";
-import { Page, request } from "../api";
+import { Page, Pageable, request } from "../api";
 
-export type BankAsset = "ETH" | "USDC" | "NFT" | string;
-export type BankAction = "DEPOSIT" | "WITHDRAW" | "BORROW" | "REPAY" | string;
+export type BankAsset = "ETHER" | "USDC" | "NFT";
+export type BankAction = "DEPOSIT" | "WITHDRAW";
 
-export interface EventBaseResponse {
+export type TransactionStatus = "PROCESSING" | "DONE" | "FAILED";
+
+export interface TransactionEventBaseResponse {
   txHash: string;
-  blockNumber: string; // BigInteger as string
+  blockNumber: bigint; // BigInteger as string
   logIndex: number;
-  eventTimestamp: string; // BigInteger as string (epoch seconds/millis)
+  eventTimestamp: string;
+  createdAt: string;
+  status : TransactionStatus;
 }
 
-export interface BankTransactionResponse extends EventBaseResponse {
+export interface BankTransactionResponse extends TransactionEventBaseResponse {
   id: number;
   user: string;
   amount: bigint; // BigInteger as string
   bankAsset: BankAsset;
   bankAction: BankAction;
-  nftAddress?: string | null;
-  tokenId?: string | null; // BigInteger as string
+  nftAddress?: string;
+  tokenId?: string// BigInteger as string
 }
 
 export interface BankTransactionFilter {
@@ -27,12 +31,6 @@ export interface BankTransactionFilter {
   toTime?: number;   // epoch millis
   assetTypes?: BankAsset[];
   actions?: BankAction[];
-}
-
-export interface Pageable {
-  page?: number; // zero-based index as in Spring Pageable
-  size?: number;
-  sort?: string; // e.g. "createdAt,DESC"
 }
 
 export interface BankTransactionHistoryParams {
@@ -45,7 +43,7 @@ export async function getBankTransactions({
   pageable,
 }: BankTransactionHistoryParams) {
 
-  if (process.env.NEXT_PUBLIC_DEV === "true") {
+  if (process.env.NEXT_USE_MOCK_DATA === "true") {
     console.log("Returning mock bank transactions with filter:", filter, "and pageable:", pageable);
     return mockBankTransactions;
   }
@@ -66,6 +64,8 @@ export async function getBankTransactions({
       sort: pageable?.sort ?? "createdAt,DESC",
     },
   });
+
+
 
   
   return data;

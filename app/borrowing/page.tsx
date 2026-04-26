@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HandCoins, Wallet } from "lucide-react";
-import { useAccount } from "wagmi";
-import { formatEther } from "viem";
+import { useAccount, useWriteContract } from "wagmi";
+import { formatEther, parseEther, parseUnits } from "viem";
+import { contractAddress } from "@/config/app.config";
+import abiData from "@/abi.json";
 import WalletRequired from "@/components/wallet-required";
 import { LoanApplicationDialog } from "@/view/Borrowing/LoanApplicationDialog";
 import { LoanApplicationTable } from "@/view/Borrowing/LoanApplicationTable";
@@ -14,16 +16,23 @@ import type {
   LoanApplication,
   LoanApplicationSubmitValues,
 } from "@/view/Borrowing/types";
+import { useUserLoanApplications } from "@/hooks/use-user-loan";
 
 export default function BorrowingPage() {
   const router = useRouter();
   const { address } = useAccount();
+  const { writeContractAsync } = useWriteContract();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(null);
   const [txMessage, setTxMessage] = useState<string | null>(null);
-  const [applications, setApplications] = useState<LoanApplication[]>(mockLoanApplications);
   const { data: userBalance } = useUserBalance(address);
   const { data: userNfts } = useUserNfts(address);
+  const {data: userLoanApplications, isLoading: isLoadingLoanApplications } = useUserLoanApplications({
+    filter: { user1: address },
+    page: 0,
+    size: 10,
+    sort: "createdAt,DESC",
+  });
 
   const ethBalance = userBalance ? Number(formatEther(userBalance.ethBalance)) : 0;
   const availableNfts = (userNfts?.content ?? [])
@@ -35,32 +44,64 @@ export default function BorrowingPage() {
       name: `NFT #${nft.nftId.toString()}`,
     }));
 
-  const offerCountByLoanId = mockLoanOffers.reduce<Record<number, number>>((acc, item) => {
-    acc[item.loanApplicationId] = (acc[item.loanApplicationId] ?? 0) + 1;
-    return acc;
-  }, {});
+  const applications: LoanApplication[] = useMemo(() => {
+    if (isLoadingLoanApplications) {
+      return [];
+    }
+    return userLoanApplications?.content.map((application) => ({
+      id: application.id,
+      applicationId: application.applicationId,
+      borrower: application.borrower,
+      collateralAsset : application.collateralType,
+      collateralAmount: application.collateralType === "ETHER" ? formatEther(application.collateralAmount) : application.collateralAmount.toString(),
+            status: application.status,
+            createdAt: application.timeCreated ?? application.createdAt,
+      offerCount: application.offerCount ?? BigInt(0),
+      // NFT fields
+      nftAddress: application.nft?.nftAddress,
+      tokenId: application.nft?.tokenId ,
+      nftId: application.nft?.nftId,
+      nftName: application.nft?.nftName,
+      nftDescription: application.nft?.nftDescription,
+      nftCollectionName: application.nft?.nftCollectionName,
+      nftImageUrl: application.nft?.nftImageUrl,
+      
+      offerId: application.offerId,
+      timeAccepted: application.timeAccepted,
+
+    })) ?? [];
+  }, [userLoanApplications, isLoadingLoanApplications]);
 
   const handleSubmitApplication = async (values: LoanApplicationSubmitValues) => {
-    setIsSubmitting(true);
-    try {
-      const newApplication: LoanApplication = {
-        id: applications.length + 1,
-        borrower: address || "0x0000...0000",
-        collateralAsset: values.collateralAsset,
-        collateralAmount: String(values.collateralAmount),
-        loanAmountUsdc: String(values.loanAmountUsdc),
-        monthlyInterestRate: String(values.monthlyInterestRate),
-        loanTermMonths: String(values.loanTermMonths),
-        totalRepayment: String(values.totalRepayment),
-        nftId: values.selectedNftId,
-        nftAddress: values.selectedNftAddress,
-        tokenId: values.selectedNftTokenId ? Number(values.selectedNftTokenId) : undefined,
-        nftName: values.selectedNftName,
-        status: "Chờ xử lý",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
+    if (!address) {
+      console.warn("Wallet is not connected");
+      return;
+    }
 
-      setApplications([...applications, newApplication]);
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+    try {
+      // Determine collateral type: 0 = ETH, 1 = NFT
+      const collateralType = values.collateralAsset === "ETH" ? 0 : 1;
+      
+      // Convert amounts to wei/proper format
+      const collateralAmount = values.collateralAsset === "ETH" 
+        ? parseEther(values.collateralAmount.toString())
+        : BigInt(Math.floor(values.collateralAmount));
+      
+      const loanAmount = parseUnits(values.loanAmountUsdc.toString(), 6); // Assuming USDC has 6 decimals
+      const interestRate = BigInt(Math.floor(values.monthlyInterestRate)); // Convert to basis points or appropriate format
+      const duration = BigInt(values.loanTermMonths);
+      const nftId = BigInt(values.selectedNftId || 0);
+
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "createLoanApplication",
+        args: [collateralType, collateralAmount, nftId, loanAmount, interestRate, duration],
+      });
+
       setTxStatus("success");
       setTxMessage("Đơn vay được tạo thành công!");
     } catch (error) {
@@ -77,11 +118,11 @@ export default function BorrowingPage() {
     setTxMessage(null);
   };
 
-  const handleCancelApplication = (loanId: number) => {
-    setApplications((prev) => prev.filter((application) => application.id !== loanId));
+  const handleCancelApplication = (loanApplicationId: bigint) => {
+   
   };
 
-  const handleViewLoan = (loanId: number) => {
+  const handleViewLoan = (loanId: bigint) => {
     router.push(`/repayment?loanId=${loanId}`);
   };
 
@@ -117,7 +158,6 @@ export default function BorrowingPage() {
           </div>
           <LoanApplicationTable
             applications={applications}
-            offerCountByLoanId={offerCountByLoanId}
             onViewOffers={(loanId) => router.push(`/borrowing/${loanId}`)}
             onCancelApplication={handleCancelApplication}
             onViewLoan={handleViewLoan}

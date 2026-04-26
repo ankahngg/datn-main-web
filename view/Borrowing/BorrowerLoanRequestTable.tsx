@@ -21,16 +21,44 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import { loanRequestStatusVariantMap, type LoanOffer } from "./types";
-
-
+import {
+  loanOfferStatusLabelMap,
+  loanRequestStatusVariantMap,
+  type LoanOffer,
+} from "./types";
 
 type BorrowerLoanRequestTableProps = {
   requests: LoanOffer[];
   title?: string;
   emptyText?: string;
-  onCancelRequest?: (offerId: number) => void;
+  onCancelRequest: (offerId: bigint) => void;
 };
+
+type CancelRequestActionProps = {
+  offer: LoanOffer;
+  onCancelRequest: (offerId: bigint) => void;
+};
+
+function CancelRequestAction({
+  offer,
+  onCancelRequest,
+}: CancelRequestActionProps) {
+  const isCancelable = offer.status === "CREATED";
+  const canOpenDialog = isCancelable && Boolean(onCancelRequest);
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      className="h-8 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+      disabled={!canOpenDialog}
+      onClick={() => onCancelRequest(offer.offerId)}
+    >
+      <XCircle className="size-4" />
+      Hủy đề nghị
+    </Button>
+  );
+}
 
 export function BorrowerLoanRequestTable({
   requests,
@@ -71,7 +99,11 @@ export function BorrowerLoanRequestTable({
         header: sortableHeader<LoanOffer>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.status;
-          return <Badge variant={loanRequestStatusVariantMap[status]}>{status}</Badge>;
+          return (
+            <Badge variant={loanRequestStatusVariantMap[status]}>
+              {loanOfferStatusLabelMap[status]}
+            </Badge>
+          );
         },
       },
       {
@@ -82,20 +114,11 @@ export function BorrowerLoanRequestTable({
         id: "actions",
         header: () => <span className="text-foreground">Thao tác</span>,
         cell: ({ row }) => {
-          const offer = row.original;
-          const isCancelable = offer.status === "Chờ xử lý";
-
           return (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => onCancelRequest?.(offer.id)}
-              disabled={!isCancelable}
-              className="h-8 bg-red-500/10 text-red-300 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <XCircle className="size-4" />
-              Hủy đề nghị
-            </Button>
+            <CancelRequestAction
+              offer={row.original}
+              onCancelRequest={onCancelRequest}
+            />
           );
         },
       },
@@ -133,15 +156,24 @@ export function BorrowerLoanRequestTable({
         searchValue={globalFilter}
         onSearchChange={setGlobalFilter}
         statusFilter={{
-          value: (table.getColumn("status")?.getFilterValue() as string) ?? "all",
+          value:
+            (table.getColumn("status")?.getFilterValue() as string) ?? "all",
           onChange: (value) =>
-            table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
+            table
+              .getColumn("status")
+              ?.setFilterValue(value === "all" ? undefined : value),
           options: [
             { value: "all", label: "Tất cả trạng thái" },
-            { value: "Chờ xử lý", label: "Chờ xử lý" },
-            { value: "Tạo thành công", label: "Tạo thành công" },
-            { value: "Thất bại", label: "Thất bại" },
-            { value: "Đã hủy", label: "Đã hủy" },
+            {
+              value: "PENDING_CREATED",
+              label: loanOfferStatusLabelMap.PENDING_CREATED,
+            },
+            { value: "CREATED", label: loanOfferStatusLabelMap.CREATED },
+            {
+              value: "PENDING_CANCELED",
+              label: loanOfferStatusLabelMap.PENDING_CANCELED,
+            },
+            { value: "CANCELED", label: loanOfferStatusLabelMap.CANCELED },
           ],
         }}
         onClearFilters={() => {

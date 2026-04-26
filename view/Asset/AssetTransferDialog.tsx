@@ -44,7 +44,7 @@ function createAssetTransferSchema() {
   return z
     .object({
       action: z.enum(["Gửi", "Rút"]),
-      asset: z.enum(["ETH", "USDC", "NFT"]),
+      asset: z.enum(["ETHER", "USDC", "NFT"]),
       amount: z
         .string()
         .trim()
@@ -98,7 +98,7 @@ export function AssetTransferDialog({
     resolver: zodResolver(assetTransferSchema),
     defaultValues: {
       action: "Gửi",
-      asset: "ETH",
+      asset: "ETHER",
       amount: "",
       nftName: "",
       nftDescription: "",
@@ -150,7 +150,7 @@ export function AssetTransferDialog({
     if (!nextOpen) {
       form.reset({
         action: "Gửi",
-        asset: "ETH",
+        asset: "ETHER",
         amount: "",
         nftName: "",
         nftDescription: "",

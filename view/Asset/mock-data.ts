@@ -42,9 +42,11 @@ export const mockBankTransactions: Page<BankTransactionResponse> = {
       bankAsset: "ETH",
       bankAction: "DEPOSIT",
       txHash: "0xabc123...def456",
-      blockNumber: "12345678",
+      blockNumber: BigInt(12345678),
       logIndex: 0,
-      eventTimestamp: "1700000000000", // example epoch millis
+      eventTimestamp: "1700000000000",
+      createdAt: "",
+      status: "PROCESSING"
     },
     {
       id: 2,
@@ -53,9 +55,11 @@ export const mockBankTransactions: Page<BankTransactionResponse> = {
       bankAsset: "ETH",
       bankAction: "WITHDRAW",
       txHash: "0xdef456...abc123",
-      blockNumber: "12345679",
+      blockNumber: BigInt(12345678),
       logIndex: 1,
-      eventTimestamp: "1700000005000", // example epoch millis
+      eventTimestamp: "1700000005000",
+      createdAt: "",
+      status: "DONE"
     },
   ],
   totalElements: 2,

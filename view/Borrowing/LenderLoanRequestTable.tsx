@@ -22,14 +22,18 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import { loanRequestStatusVariantMap, type LoanOffer } from "./types";
+import {
+  loanOfferStatusLabelMap,
+  loanRequestStatusVariantMap,
+  type LoanOffer,
+} from "./types";
 
 
 type LenderLoanRequestTableProps = {
   requests: LoanOffer[];
   title?: string;
   emptyText?: string;
-  onCancelRequest?: (offerId: number) => void;
+  onCancelRequest?: (offerId: bigint) => void;
 };
 
 export function LenderLoanRequestTable({
@@ -78,7 +82,7 @@ export function LenderLoanRequestTable({
         header: sortableHeader<LoanOffer>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.status;
-          return <Badge variant={loanRequestStatusVariantMap[status]}>{status}</Badge>;
+          return <Badge variant={loanRequestStatusVariantMap[status]}>{loanOfferStatusLabelMap[status]}</Badge>;
         },
       },
       {
@@ -90,13 +94,13 @@ export function LenderLoanRequestTable({
         header: () => <span className="text-foreground">Thao tác</span>,
         cell: ({ row }) => {
           const offer = row.original;
-          const isCancelable = offer.status === "Chờ xử lý";
+          const isCancelable = offer.status === "CREATED";
 
           return (
             <Button
               type="button"
               size="sm"
-              onClick={() => onCancelRequest?.(offer.id)}
+              onClick={() => onCancelRequest?.(offer.offerId)}
               disabled={!isCancelable}
               className="h-8 bg-red-500/10 text-red-300 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -145,10 +149,10 @@ export function LenderLoanRequestTable({
             table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
           options: [
             { value: "all", label: "Tất cả trạng thái" },
-            { value: "Chờ xử lý", label: "Chờ xử lý" },
-            { value: "Tạo thành công", label: "Tạo thành công" },
-            { value: "Thất bại", label: "Thất bại" },
-            { value: "Đã hủy", label: "Đã hủy" },
+            { value: "PENDING_CREATED", label: loanOfferStatusLabelMap.PENDING_CREATED },
+            { value: "CREATED", label: loanOfferStatusLabelMap.CREATED },
+            { value: "PENDING_CANCELED", label: loanOfferStatusLabelMap.PENDING_CANCELED },
+            { value: "CANCELED", label: loanOfferStatusLabelMap.CANCELED },
           ],
         }}
         onClearFilters={() => {

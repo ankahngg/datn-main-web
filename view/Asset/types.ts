@@ -1,9 +1,34 @@
-export type AssetSymbol = "ETH" | "USDC" | "NFT";
-export type TxType = "Gửi" | "Rút";
-export type TxStatus = "Thành công" | "Đang xử lý" | "Thất bại";
+import type {
+  BankAction as BankActionResponse,
+  BankAsset,
+  TransactionStatus as TransactionStatusResponse,
+} from "@/service/modules/bank-transaction";
+
+export type BankAction = BankActionResponse;
+export type TransactionStatus = TransactionStatusResponse;
+export type BankActionLabel = "Gửi" | "Rút";
+export type TxStatus = "Đang xử lý" | "Thành công" | "Thất bại";
+export type NftDepositStatus = "Đã gửi" | "Đã rút";
+
+export const bankActionLabelMap: Record<BankAction, BankActionLabel> = {
+  DEPOSIT: "Gửi",
+  WITHDRAW: "Rút",
+};
+
+export const transactionStatusVariantMap: Record<TransactionStatus, "warning" | "success" | "danger"> = {
+  PROCESSING: "warning",
+  DONE: "success",
+  FAILED: "danger",
+};
+
+export const transactionStatusLabelMap: Record<TransactionStatus, TxStatus> = {
+  PROCESSING: "Đang xử lý",
+  DONE: "Thành công",
+  FAILED: "Thất bại",
+};
 
 export type AssetBalance = {
-  symbol: AssetSymbol;
+  symbol: BankAsset;
   name: string;
   amount: string;
   unit: string;
@@ -11,17 +36,16 @@ export type AssetBalance = {
 
 export type Transaction = {
   id: number;
-  type: TxType;
-  asset: AssetSymbol;
+  type: BankAction;
+  asset: BankAsset;
   amount: string;
   time: string;
-  status: TxStatus;
-  
+  status: TransactionStatus;
 };
 
 export type AssetTransferSubmitValues = {
-  action: TxType;
-  asset: AssetSymbol;
+  action: BankActionLabel;
+  asset: BankAsset;
   amount: number;
   nftName?: string;
   nftDescription?: string;
@@ -30,7 +54,6 @@ export type AssetTransferSubmitValues = {
   withdrawNftId?: string;
 };
 
-export type NftDepositStatus = "Đã gửi" | "Đã rút";
 
 export type NftDeposit = {
   id: number;

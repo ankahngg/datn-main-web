@@ -1,103 +1,168 @@
-import type { LoanApplication, LoanOffer } from "./types";
+import { Page } from "@/service/api";
+import { UserLoanApplicationResponse, UserLoanOfferResponse } from "@/service/modules/loan-application";
 
-export const mockLoanApplications: LoanApplication[] = [
-  {
-    id: 1,
-    borrower: "0x1234...5678",
-    collateralAsset: "ETH",
-    collateralAmount: "10",
-    status: "Chờ xử lý",
-    createdAt: "2026-04-18",
-  },
-  {
-    id: 2,
-    borrower: "0xabcd...ef01",
-    collateralAsset: "NFT",
-    collateralAmount: "1",
-    nftAddress: "0x1ad8...1234",
-    tokenId: 5678,
-    nftName: "Cryptopunk #5678",
-    nftDescription: "A pixel art collectible from the original Cryptopunks collection",
-    nftCollectionName: "Cryptopunks",
-    nftImageUrl: "https://example.com/cryptopunk-5678.png",
-    status: "Đợi chấp nhận",
-    createdAt: "2026-04-17",
-  },
-  {
-    id: 3,
-    borrower: "0xabcd...ef01",
-    collateralAsset: "ETH",
-    collateralAmount: "12500",
-    status: "Đã chấp nhận",
-    createdAt: "2026-04-17",
-    offerId: 5, // Đơn vay này đã có offer được chấp nhận
-    timeStartActive: "2026-04-20", // Giả sử offer được chấp nhận vào ngày 20/04/2026
-  },
-  {
-    id: 4,
-    borrower: "0xabcd...ef01",
-    collateralAsset: "ETH",
-    collateralAmount: "5",
-    status: "Đã hủy",
-    createdAt: "2026-04-17",
-    
-  },
-];
-
-export const mockLoanOffers: LoanOffer[] = [
-  {
-    id: 1,
-    loanApplicationId: 1,
-    offerType: "Offer của người tạo đơn",
-    requester: "0x1234...5678",
-    loanAmount: "5000",
-    interestRate: "5.5",
-    duration: "12",
-    status: "Chờ xử lý",
-    createdAt: "2026-04-18",
-  },
-  {
-    id: 2,
-    loanApplicationId: 1,
-    offerType: "Offer của người cho vay",
-    requester: "0x9090...1122",
-    loanAmount: "4700",
-    interestRate: "6.0",
-    duration: "10",
-    status: "Tạo thành công",
-    createdAt: "2026-04-19",
-  },
-  {
-    id: 3,
-    loanApplicationId: 1,
-    offerType: "Offer của người cho vay",
-    requester: "0x7788...9900",
-    loanAmount: "4800",
-    interestRate: "5.8",
-    duration: "12",
-    status: "Thất bại",
-    createdAt: "2026-04-19",
-  },
-  {
-    id: 4,
-    loanApplicationId: 2,
-    offerType: "Offer của người tạo đơn",
-    requester: "0xabcd...ef01",
-    loanAmount: "7000",
-    interestRate: "4.2",
-    duration: "6",
-    status: "Tạo thành công",
-    createdAt: "2026-04-17",
-  },
+export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
+  content: [
     {
-    id: 5,
-    loanApplicationId: 3,
-    offerType: "Offer của người tạo đơn",
-    requester: "0xabcd...ef01",
-    loanAmount: "12500",
-    interestRate: "5.0",
-    duration: "12",
-    status: "Tạo thành công",
-    createdAt: "2026-04-17",
-  },
-];
+      id: 1,
+      applicationId: BigInt("1001"),
+      borrower: "0x1234...abcd",
+      collateralType: "ETHER",
+      collateralAmount: BigInt("50000000000000000"), // 0.05 ETH
+      status: "PENDING_CREATED",
+      timeCreated: "2024-04-01T12:00:00Z",
+      createdAt: "2024-04-01T12:00:00Z",
+      offerCount: BigInt("2"),
+    },
+    {
+      id: 2,
+      applicationId: BigInt("1002"),
+      borrower: "0x1234...abcd",
+      collateralType: "NFT",
+      collateralAmount: BigInt("1"), // 1 NFT
+      nft: {
+        userAddress: "0x1234...abcd",
+        id: 1,
+        nftId: BigInt("1001"),
+        user: "0x1234...abcd",
+        nftAddress: "0xNFT...001",
+        tokenId: BigInt("5001"),
+        timeCreated: "2024-01-01T12:00:00Z",
+        createdAt: "2024-01-01T12:00:00Z",
+      },
+      status: "ACCEPTED",
+      timeAccepted: "2024-03-05T12:00:00Z",
+      timeCreated: "2024-03-01T12:00:00Z",
+      createdAt: "2024-03-01T12:00:00Z",
+      offerId: BigInt("2001"),
+      offerCount: BigInt("1"),
+    },
+    {
+      id: 3,
+      applicationId: BigInt("1003"),
+      borrower: "0x1234...abcd",
+      collateralType: "ETHER",
+      collateralAmount: BigInt("100000000000000000"), // 0.1 ETH
+      status: "CANCELED",
+      timeCancelled: "2024-02-10T12:00:00Z",
+      timeCreated: "2024-02-01T12:00:00Z",
+      createdAt: "2024-02-01T12:00:00Z",
+      offerCount: BigInt("0"),
+    },
+    {
+      id: 4,
+      applicationId: BigInt("1004"),
+      borrower: "0x1234...abcd",
+      collateralType: "NFT",
+      collateralAmount: BigInt("1"), // 1 NFT
+      nft: {
+        userAddress: "0x1234...abcd",
+        id: 2,
+        nftId: BigInt("1002"),
+        user: "0x1234...abcd",
+        nftAddress: "0xNFT...002",
+        tokenId: BigInt("5002"),
+        timeCreated: "2024-02-01T12:00:00Z",
+        createdAt: "2024-02-01T12:00:00Z",
+      },
+      status: "PENDING_ACCEPTED",
+      timeCreated: "2024-04-10T12:00:00Z",
+      createdAt: "2024-04-10T12:00:00Z",
+      offerCount: BigInt("1"),
+    },
+    {
+      id: 5,
+      applicationId: BigInt("1005"),
+      borrower: "0x1234...abcd",
+      collateralType: "ETHER",
+      collateralAmount: BigInt("75000000000000000"), // 0.075 ETH
+      status: "CREATED",
+      timeCreated: "2024-04-12T09:30:00Z",
+      createdAt: "2024-04-12T09:30:00Z",
+      offerCount: BigInt("0"),
+    },
+    {
+      id: 6,
+      applicationId: BigInt("1006"),
+      borrower: "0x1234...abcd",
+      collateralType: "NFT",
+      collateralAmount: BigInt("1"),
+      nft: {
+        userAddress: "0x1234...abcd",
+        id: 3,
+        nftId: BigInt("1003"),
+        user: "0x1234...abcd",
+        nftAddress: "0xNFT...003",
+        tokenId: BigInt("5003"),
+        timeCreated: "2024-03-21T10:00:00Z",
+        createdAt: "2024-03-21T10:00:00Z",
+      },
+      status: "PENDING_CANCELED",
+      timeCreated: "2024-04-15T11:45:00Z",
+      createdAt: "2024-04-15T11:45:00Z",
+      offerCount: BigInt("1"),
+    },
+  ],
+  totalElements: 6,
+  totalPages: 1,
+  size: 10,
+  number: 0,
+};
+
+export const mockLoanOffers: Page<UserLoanOfferResponse> = {
+  content: [
+    {
+      id: 1,
+      offerId: BigInt("2001"),
+      applicationId: BigInt("1002"),
+      lender: "0x5678...efgh",
+      loanAmount: BigInt("2000000000"), // 2000 USDC with 6 decimals
+      interestRate: BigInt("5"), // 5% monthly
+      duration: BigInt("12"), // 12 months
+      status: "CREATED",
+      timeCreated: "2024-03-02T12:00:00Z",
+      createdAt: "2024-03-02T12:00:00Z",
+    },
+    {
+      id: 2,
+      offerId: BigInt("2002"),
+      applicationId: BigInt("1001"),
+      lender: "0x5678...efgh",
+      loanAmount: BigInt("1000000000"), // 1000 USDC with 6 decimals
+      interestRate: BigInt("3"), // 3% monthly
+      duration: BigInt("6"), // 6 months
+      status: "CANCELED",
+      timeCreated: "2024-04-02T12:00:00Z",
+      timeCancelled: "2024-04-04T14:20:00Z",
+      createdAt: "2024-04-02T12:00:00Z",
+    },
+    {
+      id: 3,
+      offerId: BigInt("2003"),
+      applicationId: BigInt("1004"),
+      lender: "0x5678...efgh",
+      loanAmount: BigInt("1500000000"), // 1500 USDC with 6 decimals
+      interestRate: BigInt("4"), // 4% monthly
+      duration: BigInt("9"), // 9 months
+      status: "PENDING_CREATED",
+      timeCreated: "2024-04-11T12:00:00Z",
+      createdAt: "2024-04-11T12:00:00Z",
+    },
+    {
+      id: 4,
+      offerId: BigInt("2004"),
+      applicationId: BigInt("1006"),
+      lender: "0x9abc...1234",
+      loanAmount: BigInt("2200000000"), // 2200 USDC with 6 decimals
+      interestRate: BigInt("6"), // 6% monthly
+      duration: BigInt("10"), // 10 months
+      status: "PENDING_CANCELED",
+      timeCreated: "2024-04-16T08:15:00Z",
+      createdAt: "2024-04-16T08:15:00Z",
+    }
+  ],
+  totalElements: 4,
+  totalPages: 1,
+  size: 10,
+  number: 0,
+};
