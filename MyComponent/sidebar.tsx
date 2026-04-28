@@ -63,7 +63,7 @@ function Leftbar() {
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/repayment" className="font-heading">
+                <Link href="/payment" className="font-heading">
                   <HandCoins className="mr-2" />
                   Trả vay
                 </Link>

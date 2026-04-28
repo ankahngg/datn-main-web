@@ -37,6 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 export default function LoanOffersPage() {
   const router = useRouter();
@@ -406,56 +407,26 @@ export default function LoanOffersPage() {
               />
             </section>
 
-            <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-              <DialogContent className="text-foreground bg-background sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Xác nhận hủy đề nghị</DialogTitle>
-                  <DialogDescription>
-                    {`Bạn có chắc chắn muốn hủy đề nghị #${selectedCancelOfferId?.toString() ?? ""} không?`}
-                  </DialogDescription>
-                </DialogHeader>
-
-                {cancelTxMessage ? (
-                  <div
-                    className={
-                      cancelTxStatus === "success"
-                        ? "rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-500"
-                        : cancelTxStatus === "error"
-                          ? "rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400"
-                          : "rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
-                    }
-                  >
-                    {cancelTxMessage}
-                  </div>
-                ) : null}
-
-                <DialogFooter className="pt-3 bg-background text-foreground">
-                  <Button
-                    className="red-btn"
-                    onClick={() => {
-                      handleCancelOffer();
-                    }}
-                    disabled={isCancelSubmitting || cancelTxStatus === "success"}
-                  >
-                    {isCancelSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
-                    {isCancelSubmitting ? "Đang xử lý..." : "Xác nhận"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <ConfirmDialog
+              open={isCancelDialogOpen}
+              onOpenChange={setIsCancelDialogOpen}
+              title="Xác nhận hủy offer"
+              content="Bạn có chắc chắn muốn hủy offer này? Hành động này không thể hoàn tác."
+              txMessage={cancelTxMessage}
+              txStatus={cancelTxStatus}
+              isSubmtting={isCancelSubmitting}
+              onConfirm={handleCancelOffer}
+            />
           </>
         ) : (
           <Card className="bg-sidebar text-foreground">
             <CardHeader>
               <CardTitle>Không tìm thấy đơn vay</CardTitle>
-              <CardDescription>
-                Đơn vay bạn đang truy cập không tồn tại hoặc đã bị xóa.
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => router.push("/borrowing")}>
-                Quay lại trang vay
-              </Button>
+              <p className="text-muted-foreground">
+                Không thể tìm thấy đơn vay với ID {params.loanId}. Vui lòng kiểm tra lại đường dẫn hoặc quay lại trang danh sách đơn vay.
+              </p>
             </CardContent>
           </Card>
         )}

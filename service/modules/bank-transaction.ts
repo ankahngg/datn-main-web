@@ -43,7 +43,7 @@ export async function getBankTransactions({
   pageable,
 }: BankTransactionHistoryParams) {
 
-  if (process.env.NEXT_USE_MOCK_DATA === "true") {
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
     console.log("Returning mock bank transactions with filter:", filter, "and pageable:", pageable);
     return mockBankTransactions;
   }

@@ -11,11 +11,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import clsx from "clsx";
 
 type ConfirmDialogProps = {
-  trigger: React.ReactElement;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   title: string;
   content: React.ReactNode;
   txMessage?: string | null;
@@ -25,7 +26,8 @@ type ConfirmDialogProps = {
 };
 
 export function ConfirmDialog({
-  trigger,
+  open,
+  onOpenChange,
   title,
   content,
   txMessage,
@@ -33,37 +35,32 @@ export function ConfirmDialog({
   isSubmtting,
   onConfirm,
 }: ConfirmDialogProps) {
-  const [open, setOpen] = React.useState(false);
-  
-  const isSubmitting = Boolean(isSubmtting) 
+  const isSubmitting = Boolean(isSubmtting);
   const canRetry = txStatus !== "success";
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="text-foreground bg-background sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{content}</DialogDescription>
         </DialogHeader>
 
-        {txMessage ? (
-          <div
-            className={
-              txStatus === "success"
-                ? "rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-500"
-                : txStatus === "error"
-                  ? "rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400"
-                  : "rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
-            }
-          >
-            {txMessage}
-          </div>
-        ) : null}
+        
 
         <DialogFooter className="pt-3 bg-background text-foreground">
+          {txMessage && (
+                          <p
+                            className={clsx(
+                              "mr-auto text-sm",
+                              txStatus === "success" && "text-emerald-400",
+                              txStatus === "error" && "text-red-400",
+                            )}
+                          >
+                            {txMessage}
+                          </p>
+                        )}
           <Button
-           
             className="red-btn"
             onClick={() => {
               onConfirm();

@@ -85,7 +85,7 @@ export async function getUserLoanApplications({
   pageable, 
 }: LoanHistoryParams) {
 
-  if (process.env.NEXT_USE_MOCK_DATA === "true") {
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
     console.log("Returning mock loan applications with filter:", filter, "and pageable:", pageable);
     return mockLoanApplications;
   }
@@ -117,7 +117,7 @@ export async function getUserLoanOffers({
   pageable, 
 }: LoanHistoryParams) {
 
-    if (process.env.NEXT_USE_MOCK_DATA === "true") {
+    if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
       console.log("Returning mock loan offers with filter:", filter, "and pageable:", pageable);
       return mockLoanOffers;
     }
@@ -146,7 +146,7 @@ export async function getUserLoanOffers({
 }
 
 export async function getUserLoanApplicationById(applicationId: bigint) {
-  if (process.env.NEXT_USE_MOCK_DATA === "true") {
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
     console.log("Returning mock loan application for applicationId:", applicationId);
     const val = mockLoanApplications.content.find(app => app.applicationId === applicationId) ?? null;
     if (!val) throw new Error(`Mock loan application with applicationId ${applicationId} not found`);
@@ -160,7 +160,7 @@ export async function getUserLoanApplicationById(applicationId: bigint) {
 }
 
 export async function getUserLoanOfferById(offerId: bigint) {
-  if (process.env.NEXT_USE_MOCK_DATA === "true") {
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
     console.log("Returning mock loan offer for offerId:", offerId);
     const val = mockLoanOffers.content.find(offer => offer.offerId === offerId) ?? null;
     if (!val) throw new Error(`Mock loan offer with offerId ${offerId} not found`);
@@ -174,7 +174,7 @@ export async function getUserLoanOfferById(offerId: bigint) {
 }
 
 export async function getLoanOffersByApplicationId(applicationId: bigint) : Promise<Page<UserLoanOfferResponse>> {
-    if (process.env.NEXT_USE_MOCK_DATA === "true") {
+    if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
         console.log("Returning mock loan offers for applicationId:", applicationId);
         return {
             content: mockLoanOffers.content.filter(offer => offer.applicationId === applicationId),

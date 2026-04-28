@@ -8,6 +8,7 @@ import { formatEther, parseEther, parseUnits } from "viem";
 import { contractAddress } from "@/config/app.config";
 import abiData from "@/abi.json";
 import WalletRequired from "@/components/wallet-required";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { LoanApplicationDialog } from "@/view/Borrowing/LoanApplicationDialog";
 import { LoanApplicationTable } from "@/view/Borrowing/LoanApplicationTable";
 import { mockLoanApplications, mockLoanOffers } from "@/view/Borrowing/mock-data";
@@ -25,6 +26,11 @@ export default function BorrowingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(null);
   const [txMessage, setTxMessage] = useState<string | null>(null);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [selectedCancelApplicationId, setSelectedCancelApplicationId] = useState<bigint | null>(null);
+  const [isCancelSubmitting, setIsCancelSubmitting] = useState(false);
+  const [cancelTxStatus, setCancelTxStatus] = useState<"idle" | "success" | "error" | null>(null);
+  const [cancelTxMessage, setCancelTxMessage] = useState<string | null>(null);
   const { data: userBalance } = useUserBalance(address);
   const { data: userNfts } = useUserNfts(address);
   const {data: userLoanApplications, isLoading: isLoadingLoanApplications } = useUserLoanApplications({
@@ -119,7 +125,45 @@ export default function BorrowingPage() {
   };
 
   const handleCancelApplication = (loanApplicationId: bigint) => {
-   
+    setSelectedCancelApplicationId(loanApplicationId);
+    setIsCancelDialogOpen(true);
+    setCancelTxStatus(null);
+    setCancelTxMessage(null);
+  };
+
+  const handleConfirmCancelApplication = async () => {
+    if (!selectedCancelApplicationId) {
+      return;
+    }
+
+    if (!address) {
+      console.warn("Wallet is not connected");
+      setCancelTxStatus("error");
+      setCancelTxMessage("Wallet is not connected");
+      return;
+    }
+
+    setIsCancelSubmitting(true);
+    setCancelTxStatus(null);
+    setCancelTxMessage(null);
+
+    try {
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "cancelLoanApplication",
+        args: [selectedCancelApplicationId],
+      });
+
+      setCancelTxStatus("success");
+      setCancelTxMessage("Hủy đơn vay thành công!");
+    } catch (error) {
+      console.error("Error cancelling loan application:", error);
+      setCancelTxStatus("error");
+      setCancelTxMessage("Không thể hủy đơn vay");
+    } finally {
+      setIsCancelSubmitting(false);
+    }
   };
 
   const handleViewLoan = (loanId: bigint) => {
@@ -162,9 +206,20 @@ export default function BorrowingPage() {
             onCancelApplication={handleCancelApplication}
             onViewLoan={handleViewLoan}
           />
+
+          <ConfirmDialog
+            open={isCancelDialogOpen}
+            onOpenChange={setIsCancelDialogOpen}
+            title="Xác nhận hủy đơn vay"
+            content="Bạn có chắc chắn muốn hủy đơn vay này? Hành động này không thể hoàn tác."
+            txMessage={cancelTxMessage}
+            txStatus={cancelTxStatus}
+            isSubmtting={isCancelSubmitting}
+            onConfirm={handleConfirmCancelApplication}
+          />
         </section>
 
-        <section className="space-y-3">
+        {/* <section className="space-y-3">
           <div className="flex items-center gap-2 text-sm">
             <HandCoins className="size-4" />
             <span>Luồng offer vay</span>
@@ -172,7 +227,7 @@ export default function BorrowingPage() {
           <p className="rounded-xl bg-sidebar px-4 py-3 text-sm text-muted-foreground">
             Offer của người tạo đơn và offer của người cho vay sẽ được hiển thị ở trang chi tiết từng đơn vay.
           </p>
-        </section>
+        </section> */}
       </div>
     </WalletRequired>
   );

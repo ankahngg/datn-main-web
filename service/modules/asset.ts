@@ -27,14 +27,14 @@ export interface UserNftResponse {
 
 const mockBalance: UserBalanceResponse = {
   userAddress: "0x1234...abcd",
-  usdcBalance: BigInt("1000000000000000000"), // 1,000 USDC with 18 decimals
+  usdcBalance: BigInt("1000000000"), // 1000 USDC with 6 decimals
   ethBalance: BigInt("50000000000000000"), // 0.05 ETH with 18 decimals
 };
 
 
 export async function getUserBalance(address: string) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
-  if(process.env.NEXT_USE_MOCK_DATA === "true") {
+  if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
     console.log("Returning mock balance for user:", address);
     return mockBalance;
   }
@@ -49,7 +49,7 @@ export async function getUserBalance(address: string) {
 
 export async function getUserNfts(address: string) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
-  if(process.env.NEXT_USE_MOCK_DATA === "true") {
+  if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
     console.log("Returning mock NFTs for user:", address);
     return mockNfts;
   }

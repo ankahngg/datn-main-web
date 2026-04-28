@@ -1,0 +1,135 @@
+import { Page } from "@/service/api";
+import {
+  LoanPaymentHistoryResponse,
+  UserRepaymentLoanResponse,
+} from "@/service/modules/repayment";
+
+export const mockRepaymentLoans: Page<UserRepaymentLoanResponse> = {
+  content: [
+    {
+      id: 1,
+      loanId: BigInt("3001"),
+      applicationId: BigInt("1001"),
+      offerId: BigInt("2001"),
+      borrower: "0x1a12b4c6d8e0f1234567890abcdef1234567890",
+      lender: "0x8a12b4c6d8e0f1234567890abcdef1234567890",
+      loanAmount: BigInt("500000000"), // 500 USDC (6 decimals)
+      interestRate: BigInt("8"), // 8%
+      duration: BigInt("6"),
+      totalAmountHaveToPay: BigInt("540000000"),
+      amountPaid: BigInt("200000000"),
+      loanStatus: "PENDING_PAID",
+      timePaid: "2026-04-05T11:00:00Z",
+      timeCreated: "2026-03-20T10:30:00Z",
+      createdAt: "2026-03-20T10:30:00Z",
+    },
+    {
+      id: 2,
+      loanId: BigInt("3002"),
+      applicationId: BigInt("1002"),
+      offerId: BigInt("2002"),
+      borrower: "0x1a12b4c6d8e0f1234567890abcdef1234567890",
+      lender: "0x2f9e4c6b8d0a1234567890abcdef1234567890ab",
+      loanAmount: BigInt("1200000000"), // 1200 USDC (6 decimals)
+      interestRate: BigInt("15"), // 15%
+      duration: BigInt("12"),
+      totalAmountHaveToPay: BigInt("1380000000"),
+      amountPaid: BigInt("1380000000"),
+      loanStatus: "PAID",
+      timePaid: "2026-03-01T15:20:00Z",
+      timeCreated: "2026-02-12T08:00:00Z",
+      createdAt: "2026-02-12T08:00:00Z",
+    },
+    {
+      id: 3,
+      loanId: BigInt("3003"),
+      applicationId: BigInt("1003"),
+      offerId: BigInt("2003"),
+      borrower: "0x1a12b4c6d8e0f1234567890abcdef1234567890",
+      lender: "0x7c1d4e9a0b2f1234567890abcdef1234567890cd",
+      loanAmount: BigInt("800000000"), // 800 USDC (6 decimals)
+      interestRate: BigInt("10"), // 10%
+      duration: BigInt("9"),
+      totalAmountHaveToPay: BigInt("880000000"),
+      amountPaid: BigInt("300000000"),
+      loanStatus: "CREATED",
+      timePaid: "2026-04-10T11:15:00Z",
+      timeCreated: "2026-04-01T14:10:00Z",
+      createdAt: "2026-04-01T14:10:00Z",
+    },
+    {
+      id: 4,
+      loanId: BigInt("3004"),
+      applicationId: BigInt("1004"),
+      offerId: BigInt("2004"),
+      borrower: "0x1a12b4c6d8e0f1234567890abcdef1234567890",
+      lender: "0x6b2e4f8a1c3d1234567890abcdef1234567890ef",
+      loanAmount: BigInt("950000000"), // 950 USDC (6 decimals)
+      interestRate: BigInt("12"), // 12%
+      duration: BigInt("8"),
+      totalAmountHaveToPay: BigInt("1064000000"),
+      amountPaid: BigInt("0"),
+      loanStatus: "PENDING_CREATED",
+      timeCreated: "2026-04-18T09:45:00Z",
+      createdAt: "2026-04-18T09:45:00Z",
+    },
+  ],
+  totalElements: 4,
+  totalPages: 1,
+  size: 10,
+  number: 0,
+};
+
+export const mockLoanPaymentHistory: Page<LoanPaymentHistoryResponse> = {
+  content: [
+    {
+      id: 1,
+      loanId: BigInt("3001"),
+      borrower: "0x1a12b4c6d8e0f1234567890abcdef1234567890",
+      lender: "0x8a12b4c6d8e0f1234567890abcdef1234567890",
+      action: "PAY",
+      amount: BigInt("100000000"),
+      amountPaid: BigInt("100000000"),
+      totalAmountHaveToPay: BigInt("540000000"),
+      blockNumber: 22334455,
+      txHash: "0xmocktx_3001_1",
+      logIndex: 1,
+      timeCreated: "2026-03-28T11:00:00Z",
+      createdAt: "2026-03-28T11:00:00Z",
+    },
+    {
+      id: 2,
+      loanId: BigInt("3001"),
+      borrower: "0x1a12b4c6d8e0f1234567890abcdef1234567890",
+      lender: "0x8a12b4c6d8e0f1234567890abcdef1234567890",
+      action: "PAY",
+      amount: BigInt("100000000"),
+      amountPaid: BigInt("200000000"),
+      totalAmountHaveToPay: BigInt("540000000"),
+      blockNumber: 22349901,
+      txHash: "0xmocktx_3001_2",
+      logIndex: 2,
+      timeCreated: "2026-04-05T11:00:00Z",
+      createdAt: "2026-04-05T11:00:00Z",
+    },
+    {
+      id: 3,
+      loanId: BigInt("3002"),
+      borrower: "0x1a12b4c6d8e0f1234567890abcdef1234567890",
+      lender: "0x2f9e4c6b8d0a1234567890abcdef1234567890ab",
+      action: "END",
+      amount: BigInt("1380000000"),
+      amountPaid: BigInt("1380000000"),
+      totalAmountHaveToPay: BigInt("1380000000"),
+      blockNumber: 22110022,
+      txHash: "0xmocktx_3002_1",
+      logIndex: 0,
+      timeCreated: "2026-03-01T15:20:00Z",
+      createdAt: "2026-03-01T15:20:00Z",
+    },
+  ],
+  totalElements: 3,
+  totalPages: 1,
+  size: 10,
+  number: 0,
+};
