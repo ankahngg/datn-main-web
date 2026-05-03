@@ -146,3 +146,10 @@
   @apply bg-destructive/80 text-foreground/80 hover:bg-destructive hover:text-foreground 
 }
 
+.detail-card-bg {
+   @apply bg-background border-transparent shadow-none
+}
+
+.hilight-row {
+  @apply bg-green-200/10
+}

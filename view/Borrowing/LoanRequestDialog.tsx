@@ -18,14 +18,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -35,8 +27,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import clsx from "clsx";
-
-import type { LoanOfferSubmitValues, LoanOfferType } from "./types";
+import { LoanOfferSubmitValues } from "@/model/LoanOffer";
+import { UserBalanceResponse } from "@/model/User";
+import { LoanApplication } from "@/model/LoanApplication";
+import { formatUsdc } from "@/utils";
+import { parseUnits } from "viem";
 
 function createLoanRequestSchema() {
   return z.object({
@@ -92,9 +87,9 @@ type LoanRequestFormValues = z.infer<
 >;
 
 type LoanRequestDialogProps = {
-  loanId: number;
-  offerType: LoanOfferType;
+  loanApplication: LoanApplication;
   triggerLabel?: string;
+  userBalance: UserBalanceResponse;
   onSubmitRequest: (values: LoanOfferSubmitValues) => void;
   isSubmitting?: boolean;
   txStatus?: "idle" | "success" | "error" | null;
@@ -104,8 +99,8 @@ type LoanRequestDialogProps = {
 };
 
 export function LoanRequestDialog({
-  loanId,
-  offerType,
+  userBalance,
+  loanApplication,
   triggerLabel,
   onSubmitRequest,
   isSubmitting,
@@ -140,7 +135,8 @@ export function LoanRequestDialog({
   const interestAmount =
     principalAmount * (monthlyInterestRate / 100) * loanTermMonths;
   const totalRepayment = principalAmount + interestAmount;
-  const currentUser = address ?? "Chưa kết nối ví";
+  const currentUser = userBalance.userWalletAddress;
+  const loanId = loanApplication.id;
 
   function handleOpenChange(nextOpen: boolean) {
     setIsModalOpen(nextOpen);
@@ -153,7 +149,6 @@ export function LoanRequestDialog({
   function onSubmit(data: LoanRequestFormValues) {
     onSubmitRequest({
       loanId,
-      offerType,
       loanAmount: Number(data.loanAmount.replace(/,/g, ".")),
       interestRate: Number(data.interestRate.replace(/,/g, ".")),
       loanTerm: data.loanTerm,
@@ -178,8 +173,8 @@ export function LoanRequestDialog({
             Tạo đề nghị vay mới
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Offer này sẽ được gắn với đơn vay #{loanId} theo nhóm{" "}
-            {offerType.toLowerCase()}.
+            Offer này sẽ được gắn với đơn vay #{loanId} theo 
+
           </DialogDescription>
         </DialogHeader>
 
@@ -202,23 +197,6 @@ export function LoanRequestDialog({
                 value={currentUser}
                 className="h-9 border-muted-foreground bg-background text-foreground placeholder:text-muted-foreground"
               />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-zinc-300">Loại offer</p>
-              <Select value={offerType} disabled>
-                <SelectTrigger className="h-9 w-full border-muted-foreground bg-background text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-muted-foreground bg-background/90 text-foreground">
-                  <SelectItem value="Offer của người tạo đơn">
-                    Offer của người tạo đơn
-                  </SelectItem>
-                  <SelectItem value="Offer của người cho vay">
-                    Offer của người cho vay
-                  </SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -300,6 +278,21 @@ export function LoanRequestDialog({
                 Tổng tiền phải trả: {formatAmount(totalRepayment)} USDC
               </p>
             </div>
+              {
+                  loanApplication.borrower != currentUser && (
+                    <div className="rounded-lg border border-red-400 bg-background/40 p-3">
+                      <p className="text-xs text-muted-foreground">
+                        Số dư hiện tại: {formatUsdc(userBalance.usdcBalance)} USDC
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Số tiền phải trả để tạo Offer: {principalAmount} USDC
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        Số dư còn lại: {formatUsdc(userBalance.usdcBalance - parseUnits(loanAmountInput,6))} USDC
+                      </p>
+                    </div>
+                  )
+              }
 
             <DialogFooter className="pt-3 bg-background text-foreground">
               {txMessage && (

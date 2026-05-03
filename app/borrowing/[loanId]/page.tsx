@@ -6,38 +6,34 @@ import { useAccount, useWriteContract } from "wagmi";
 import { ArrowLeft, LoaderCircle, Wallet } from "lucide-react";
 import WalletRequired from "@/components/wallet-required";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoanRequestDialog } from "@/view/Borrowing/LoanRequestDialog";
 import { BorrowerLoanRequestTable } from "@/view/Borrowing/BorrowerLoanRequestTable";
 import { LenderLoanRequestTable } from "@/view/Borrowing/LenderLoanRequestTable";
-import {
-  LoanApplication,
-  loanApplicationStatusLabelMap,
-  loanStatusVariantMap,
-  type LoanOffer,
-  type LoanOfferSubmitValues,
-} from "@/view/Borrowing/types";
+
 import { Badge } from "@/components/ui/badge";
-import { useLoanOffersByApplicationId, useUserLoanApplicationById } from "@/hooks/use-user-loan";
-import { formatUnits, parseUnits } from "viem";
+
+import { formatEther, formatUnits, parseUnits } from "viem";
 import { FullScreenLoading } from "@/MyComponent/FullLoadingScreen";
 import { contractAddress } from "@/config/app.config";
 import abiData from "@/abi.json";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { formatDate, formatUsdc } from "@/utils";
+import { DetailCard } from "@/components/shared/DetailCard";
+import BackButton from "@/components/shared/BackButton";
+import {
+  LoanApplication,
+  applicationStatusLabelMap,
+  applicationStatusVariantMap,
+} from "@/model/LoanApplication";
+import { LoanOffer, LoanOfferSubmitValues } from "@/model/LoanOffer";
+import {
+  useLoanOffersByApplicationId,
+  useUserLoanApplicationById,
+} from "@/hooks/use-user-loan";
+import { FullScreenError } from "@/MyComponent/FullScreenError";
+import { useUserBalance, useUserNFTById } from "@/hooks/use-user-asset";
+import { UserNft } from "@/model/User";
 
 export default function LoanOffersPage() {
   const router = useRouter();
@@ -46,7 +42,7 @@ export default function LoanOffersPage() {
   const { writeContractAsync } = useWriteContract();
 
   const loanApplicationId = BigInt(params.loanId);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(
     null,
@@ -54,70 +50,108 @@ export default function LoanOffersPage() {
   const [txMessage, setTxMessage] = useState<string | null>(null);
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [selectedCancelOfferId, setSelectedCancelOfferId] = useState<bigint | null>(null);
+  const [selectedCancelOfferId, setSelectedCancelOfferId] = useState<
+    bigint | null
+  >(null);
   const [isCancelSubmitting, setIsCancelSubmitting] = useState(false);
-  const [cancelTxStatus, setCancelTxStatus] = useState<"idle" | "success" | "error" | null>(null);
+  const [cancelTxStatus, setCancelTxStatus] = useState<
+    "idle" | "success" | "error" | null
+  >(null);
   const [cancelTxMessage, setCancelTxMessage] = useState<string | null>(null);
-  
-  const {data: userLoanApplications, isLoading: isLoadingLoanApplications} = useUserLoanApplicationById(loanApplicationId);
-  const {data: userLoanOffers, isLoading: isLoadingLoanOffers} = useLoanOffersByApplicationId(loanApplicationId);
+  const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
+  const [selectedAcceptOfferId, setSelectedAcceptOfferId] = useState<
+    bigint | null
+  >(null);
+  const [isAcceptSubmitting, setIsAcceptSubmitting] = useState(false);
+  const [acceptTxStatus, setAcceptTxStatus] = useState<
+    "idle" | "success" | "error" | null
+  >(null);
+  const [acceptTxMessage, setAcceptTxMessage] = useState<string | null>(null);
 
-  const loan:LoanApplication = useMemo(() => {
-    return {
-        id: userLoanApplications?.id ?? 0,
-        applicationId: userLoanApplications?.applicationId ?? BigInt(0),
-        borrower: userLoanApplications?.borrower ?? "",
-        collateralAsset : userLoanApplications?.collateralType ?? "",
-        collateralAmount: userLoanApplications?.collateralType === "ETHER" ? formatUnits(userLoanApplications.collateralAmount, 18) : userLoanApplications?.collateralAmount.toString() ?? "",
-        status: userLoanApplications?.status ?? "PENDING_CREATED",
-        createdAt: userLoanApplications?.timeCreated ?? userLoanApplications?.createdAt ?? "",
-        offerCount: userLoanApplications?.offerCount ?? BigInt(0),
-        // NFT fields
-        nftAddress: userLoanApplications?.nft?.nftAddress,
-        tokenId: userLoanApplications?.nft?.tokenId,
-        nftId: userLoanApplications?.nft?.nftId,
-        nftName: userLoanApplications?.nft?.nftName,
-        nftDescription: userLoanApplications?.nft?.nftDescription,
-        nftCollectionName: userLoanApplications?.nft?.nftCollectionName,
-        nftImageUrl: userLoanApplications?.nft?.nftImageUrl,
+  const { data: userLoanApplication, isLoading: isLoadingLoanApplication } =
+    useUserLoanApplicationById(loanApplicationId);
+  const { data: userLoanOffers, isLoading: isLoadingLoanOffers } =
+    useLoanOffersByApplicationId(loanApplicationId);
+  const { data: userNft, isLoading: isLoadingUserNft } = useUserNFTById(
+    userLoanApplication?.nftId,
+  );
+  const { data: userBalance, isLoading : userBalanceIsLoading } = useUserBalance(address);
 
-        offerId: userLoanApplications?.offerId,
-        timeAccepted: userLoanApplications?.timeAccepted,
-    }
-  }, [userLoanApplications]);
+  if (isLoadingLoanApplication || isLoadingLoanOffers || isLoadingUserNft || userBalanceIsLoading)
+    return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
+  if (!userLoanApplication || !userLoanOffers || !userBalance) {
+    return (
+      <FullScreenError
+        message={`Có lỗi xảy ra khi tải dữ liệu cho đơn vay với ID ${params.loanId}. Vui lòng thử lại sau.`}
+      />
+    );
+  }
 
-  const offers: LoanOffer[] = useMemo(() => {
-    return userLoanOffers?.content.map((offer) => ({
-      id: offer.id,
+  if (userLoanApplication.nftId && !userNft) {
+    return (
+      <FullScreenError
+        message={`Không tìm thấy thông tin NFT với ID ${userLoanApplication.nftId}`}
+      />
+    );
+  }
+
+  const application: LoanApplication = {
+    id: userLoanApplication.id,
+    applicationId: userLoanApplication.applicationId,
+    borrower: userLoanApplication.borrower,
+    collateralAsset: userLoanApplication.collateralType,
+    collateralAmount: userLoanApplication.collateralAmount,
+    status: userLoanApplication.status,
+    timeCreated: formatDate(userLoanApplication.timeCreated),
+    offerCount: userLoanApplication.offerCount ?? BigInt(0),
+    // NFT fields
+    nftId: userLoanApplication.nftId,
+    acceptedOfferId: userLoanApplication.acceptedOfferId,
+    timeAccepted: userLoanApplication.timeAccepted,
+  };
+
+  const nft: UserNft | null =
+    userLoanApplication.nftId && userNft
+      ? {
+          id: userNft.id,
+          nftId: userNft.nftId,
+          nftAddress: userNft.nftAddress,
+          tokenId: userNft.tokenId,
+          depositedAt: userNft.timeCreated,
+          status: userNft.status,
+        }
+      : null;
+
+  const offers: LoanOffer[] =
+    userLoanOffers?.content.map((offer, index) => ({
+      id: index,
       loanApplicationId: offer.applicationId,
       offerId: offer.offerId,
       requester: offer.lender,
-      loanAmount: formatUnits(offer.loanAmount, 6), // Assuming loanAmount is in USDC with 6 decimals
+      loanAmount: offer.loanAmount,
       interestRate: offer.interestRate,
       duration: offer.duration,
       status: offer.status,
-      createdAt: offer.timeCreated ?? offer.createdAt,
-    })) ?? [];  
-  }, [userLoanOffers]);
-   
-  const borrowerOffers = useMemo(
-    () => offers.filter((item) => item.requester.toLowerCase() != address?.toLowerCase()),
-    [offers],
-  );
-  const lenderOffers = useMemo(
-    () => offers.filter((item) => item.requester.toLowerCase() == address?.toLowerCase()),
-    [offers],
+      timeCreated: formatDate(offer.timeCreated),
+      timeCancelled: offer.timeCancelled
+        ? formatDate(offer.timeCancelled)
+        : undefined,
+    })) ?? [];
+
+  const borrowerOffers = offers.filter(
+    (item) => item.requester.toLowerCase() != address?.toLowerCase(),
   );
 
-    const accpeptedOffer = useMemo(() => {
-    if (loan.offerId) {
-      return offers.find(offer => offer.offerId === loan.offerId);
-    }
-    return null;
-  }, [loan.offerId, offers]);
+  const lenderOffers = offers.filter(
+    (item) => item.requester.toLowerCase() == address?.toLowerCase(),
+  );
 
-  console.log("Loan details:", loan);
-  console.log("All offers for this loan:", offers);
+  const accpeptedOffer = application.acceptedOfferId
+    ? offers.find((offer) => offer.offerId === application.acceptedOfferId)
+    : null;
+
+  console.log("application Application details:", application);
+  console.log("All offers for this application:", offers);
   console.log("Borrower's offers:", borrowerOffers);
   console.log("Lender's offers:", lenderOffers);
   console.log("Accepted offer:", accpeptedOffer);
@@ -133,7 +167,7 @@ export default function LoanOffersPage() {
     setTxMessage(null);
     try {
       const applicationId = loanApplicationId;
-      const loanAmount = parseUnits(values.loanAmount.toString(),6);
+      const loanAmount = parseUnits(values.loanAmount.toString(), 6);
       const interestRate = BigInt(Math.floor(values.interestRate));
       const duration = BigInt(Math.floor(Number(values.loanTerm)));
 
@@ -165,6 +199,13 @@ export default function LoanOffersPage() {
     setIsCancelDialogOpen(true);
     setCancelTxStatus(null);
     setCancelTxMessage(null);
+  };
+
+  const handleOpenAcceptOfferDialog = (offerId: bigint) => {
+    setSelectedAcceptOfferId(offerId);
+    setIsAcceptDialogOpen(true);
+    setAcceptTxStatus(null);
+    setAcceptTxMessage(null);
   };
 
   const handleCancelOffer = async () => {
@@ -202,9 +243,49 @@ export default function LoanOffersPage() {
     }
   };
 
+  const handleAcceptOffer = async () => {
+    if (!selectedAcceptOfferId) {
+      return;
+    }
 
-  if (isLoadingLoanApplications || isLoadingLoanOffers) 
-    return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
+    if (!address) {
+      console.warn("Wallet is not connected");
+      setAcceptTxStatus("error");
+      setAcceptTxMessage("Wallet is not connected");
+      return;
+    }
+
+    setIsAcceptSubmitting(true);
+    setAcceptTxStatus(null);
+    setAcceptTxMessage(null);
+
+    try {
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "applyLoanApplication",
+        args: [selectedAcceptOfferId],
+      });
+
+      setAcceptTxStatus("success");
+      setAcceptTxMessage("Chấp nhận offer vay thành công!");
+    } catch (error) {
+      console.error("Error accepting offer:", error);
+      setAcceptTxStatus("error");
+      setAcceptTxMessage("Không thể chấp nhận offer vay");
+    } finally {
+      setIsAcceptSubmitting(false);
+    }
+  };
+
+  const canAcceptOffer = (offer: LoanOffer) => {
+    const hasValidStatus =
+      offer.status === "CREATED" && application.status === "CREATED";
+    const isDifferentUser =
+      address != undefined &&
+      offer.requester.toLowerCase() !== address.toLowerCase();
+    return hasValidStatus && isDifferentUser;
+  };
 
   return (
     <WalletRequired
@@ -212,172 +293,179 @@ export default function LoanOffersPage() {
       message="Kết nối ví để xem và tạo offer vay cho từng đơn vay."
     >
       <main className="space-y-6">
-        <Button
-          onClick={() => router.push("/borrowing")}
-          className="italic text-foreground/80 hover:text-foreground hover:bg-sidebar"
-        >
-          <ArrowLeft className="size-4" />
-          Quay lại danh sách đơn vay
-        </Button>
+        <BackButton
+          title="Quay lại "
+          
+        />
 
-        {loan ? (
+        {application ? (
           <>
             <Card className="bg-sidebar text-foreground">
               <CardHeader>
-                <CardTitle>Chi tiết đơn vay #{loan.applicationId}</CardTitle>
+                <CardTitle>
+                  Chi tiết đơn vay #{application.applicationId}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {accpeptedOffer && (
-                    <>
-                      <div className="sm:col-span-2 lg:col-span-4">
-                        <p className="text-green-600 font-heading bg-foreground/10 px-3 py-2 rounded-xl w-fit">Đơn vay này đã được chấp nhận bởi đề nghị với Offer - {accpeptedOffer.id}</p>
-                      </div>
-                    </>
+                  <>
+                    <div className="sm:col-span-2 lg:col-span-4">
+                      <p className="text-green-600 font-heading bg-foreground/10 px-3 py-2 rounded-xl w-fit">
+                        Đơn vay này đã được chấp nhận bởi đề nghị với Offer -{" "}
+                        {accpeptedOffer.id}
+                      </p>
+                    </div>
+                  </>
                 )}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="col-span-4">
-                    <p className="text-xs text-muted-foreground">Người vay</p>
-                    <p className="font-medium">{loan.borrower}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      Tài sản thế chấp
-                    </p>
-                    <p className="font-medium">{loan.collateralAsset}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      Số lượng thế chấp
-                    </p>
-                    <p className="font-medium">{loan.collateralAmount}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Trạng thái</p>
-                    <p className="font-medium">
-                      <Badge variant={loanStatusVariantMap[loan.status]}>
-                        {loanApplicationStatusLabelMap[loan.status]}
+                  <DetailCard
+                    label="Người vay"
+                    value={application.borrower}
+                    className="col-span-4 detail-card-bg"
+                    valueClassName="break-all font-medium"
+                  />
+                  <DetailCard
+                    label="Tài sản thế chấp"
+                    value={application.collateralAsset}
+                    valueClassName="font-medium"
+                    className="detail-card-bg"
+                  />
+                  <DetailCard
+                    label="Số lượng thế chấp"
+                    value={
+                      application.collateralAsset === "ETHER"
+                        ? formatEther(application.collateralAmount)
+                        : application.collateralAmount.toString()
+                    }
+                    valueClassName="font-medium"
+                    className="detail-card-bg"
+                  />
+                  <DetailCard
+                    label="Trạng thái"
+                    value={
+                      <Badge
+                        variant={
+                          applicationStatusVariantMap[application.status]
+                        }
+                      >
+                        {applicationStatusLabelMap[application.status]}
                       </Badge>
-                    </p>
-                  </div>
+                    }
+                    className="detail-card-bg"
+                  />
 
                   {accpeptedOffer && (
                     <>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Số tiền vay
-                        </p>
-                        <p className="font-medium">
-                          {accpeptedOffer.loanAmount}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Lãi suất
-                        </p>
-                        <p className="font-medium">
-                          {accpeptedOffer.interestRate}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Thời hạn vay
-                        </p>
-                        <p className="font-medium">
-                          {accpeptedOffer.duration} tháng
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Thời điểm chấp nhận
-                        </p>
-                        <p className="font-medium">
-                          {loan.timeAccepted ? loan.timeAccepted : "N/A"}
-                        </p>
-                      </div>
+                      <DetailCard
+                        label="Số tiền vay"
+                        value={formatUsdc(accpeptedOffer.loanAmount)}
+                        valueClassName="font-medium"
+                        className="detail-card-bg"
+                      />
+                      <DetailCard
+                        label="Lãi suất"
+                        value={accpeptedOffer.interestRate}
+                        valueClassName="font-medium"
+                        className="detail-card-bg"
+                      />
+                      <DetailCard
+                        label="Thời hạn vay"
+                        value={`${accpeptedOffer.duration} tháng`}
+                        valueClassName="font-medium"
+                        className="detail-card-bg"
+                      />
+                      <DetailCard
+                        label="Thời điểm chấp nhận"
+                        value={
+                          application.timeAccepted
+                            ? application.timeAccepted
+                            : "N/A"
+                        }
+                        valueClassName="font-medium"
+                        className="detail-card-bg"
+                      />
                     </>
                   )}
                 </div>
 
                 {/* NFT Details Section */}
-                {loan.collateralAsset === "NFT" && (
+                {nft && (
                   <div className="border-t border-muted pt-4">
                     <h3 className="mb-3 font-semibold text-foreground">
                       Thông tin NFT thế chấp
                     </h3>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {loan.nftName && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Tên NFT
-                          </p>
-                          <p className="font-medium">{loan.nftName}</p>
-                        </div>
+                      {nft.name && (
+                        <DetailCard
+                          label="Tên NFT"
+                          value={nft.name}
+                          valueClassName="font-medium"
+                          className="detail-card-bg"
+                        />
                       )}
-                      {loan.nftCollectionName && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Tên bộ sưu tập
-                          </p>
-                          <p className="font-medium">
-                            {loan.nftCollectionName}
-                          </p>
-                        </div>
+                      {nft.collectionName && (
+                        <DetailCard
+                          label="Tên bộ sưu tập"
+                          value={nft.collectionName}
+                          valueClassName="font-medium"
+                          className="detail-card-bg"
+                        />
                       )}
-                      {loan.nftAddress && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Địa chỉ NFT
-                          </p>
-                          <p className="font-mono text-sm font-medium">
-                            {loan.nftAddress}
-                          </p>
-                        </div>
+                      {nft.nftAddress && (
+                        <DetailCard
+                          label="Địa chỉ NFT"
+                          value={nft.nftAddress}
+                          valueClassName="break-all font-mono text-sm font-medium"
+                          className="detail-card-bg"
+                        />
                       )}
-                      {loan.tokenId !== undefined && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Token ID
-                          </p>
-                          <p className="font-medium">{loan.tokenId}</p>
-                        </div>
+                      {nft.tokenId && (
+                        <DetailCard
+                          label="Token ID"
+                          value={nft.tokenId}
+                          valueClassName="font-medium"
+                          className="detail-card-bg"
+                        />
                       )}
-                      {loan.nftDescription && (
-                        <div className="sm:col-span-2 lg:col-span-3">
-                          <p className="text-xs text-muted-foreground">Mô tả</p>
-                          <p className="font-medium text-sm">
-                            {loan.nftDescription}
-                          </p>
-                        </div>
+                      {nft.description && (
+                        <DetailCard
+                          label="Mô tả"
+                          value={nft.description}
+                          className="sm:col-span-2 lg:col-span-3"
+                          valueClassName="font-medium text-sm"
+                        />
                       )}
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-
+            <LoanRequestDialog
+              loanApplication={application}
+              userBalance={userBalance}
+              triggerLabel="Tạo đề nghị vay"
+              onSubmitRequest={handleCreateOffer}
+              isSubmitting={isSubmitting}
+              txStatus={txStatus}
+              txMessage={txMessage}
+              onResetStatus={handleResetStatus}
+              enableButton={true}
+            />
             <section className="space-y-4">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Wallet className="size-4" />
                   <span>Đề nghị vay của người tạo đơn</span>
                 </div>
-                <LoanRequestDialog
-                  loanId={loan.id}
-                  offerType="Offer của người tạo đơn"
-                  triggerLabel="Tạo đề nghị vay"
-                  onSubmitRequest={handleCreateOffer}
-                  isSubmitting={isSubmitting}
-                  txStatus={txStatus}
-                  txMessage={txMessage}
-                  onResetStatus={handleResetStatus}
-                    enableButton={true}
-                />
               </div>
               <BorrowerLoanRequestTable
                 title="Danh sách offer của người tạo đơn"
                 requests={borrowerOffers}
                 emptyText="Chưa có offer nào từ người tạo đơn"
                 onCancelRequest={handleOpenCancelOfferDialog}
+                onAcceptRequest={handleOpenAcceptOfferDialog}
+                canAcceptRequest={canAcceptOffer}
+                hilightRowId={accpeptedOffer ? accpeptedOffer.id.toString() : undefined}
               />
             </section>
 
@@ -387,23 +475,15 @@ export default function LoanOffersPage() {
                   <Wallet className="size-4" />
                   <span>Đề nghị vay của người cho vay</span>
                 </div>
-                <LoanRequestDialog
-                  loanId={loan.id}
-                  offerType="Offer của người cho vay"
-                  triggerLabel="Tạo đề nghị vay"
-                  onSubmitRequest={handleCreateOffer}
-                  isSubmitting={isSubmitting}
-                  txStatus={txStatus}
-                  txMessage={txMessage}
-                  onResetStatus={handleResetStatus}
-                 enableButton={false}
-                />
               </div>
               <LenderLoanRequestTable
                 title="Danh sách offer của người cho vay"
                 requests={lenderOffers}
                 emptyText="Chưa có offer nào từ người cho vay"
                 onCancelRequest={handleOpenCancelOfferDialog}
+                onAcceptRequest={handleOpenAcceptOfferDialog}
+                canAcceptRequest={canAcceptOffer}
+                hilightRowId={accpeptedOffer ? accpeptedOffer.id.toString() : undefined}
               />
             </section>
 
@@ -417,6 +497,16 @@ export default function LoanOffersPage() {
               isSubmtting={isCancelSubmitting}
               onConfirm={handleCancelOffer}
             />
+            <ConfirmDialog
+              open={isAcceptDialogOpen}
+              onOpenChange={setIsAcceptDialogOpen}
+              title="Xác nhận chấp nhận offer"
+              content="Bạn có chắc chắn muốn chấp nhận offer này? Hành động này không thể hoàn tác."
+              txMessage={acceptTxMessage}
+              txStatus={acceptTxStatus}
+              isSubmtting={isAcceptSubmitting}
+              onConfirm={handleAcceptOffer}
+            />
           </>
         ) : (
           <Card className="bg-sidebar text-foreground">
@@ -425,7 +515,8 @@ export default function LoanOffersPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Không thể tìm thấy đơn vay với ID {params.loanId}. Vui lòng kiểm tra lại đường dẫn hoặc quay lại trang danh sách đơn vay.
+                Không thể tìm thấy đơn vay với ID {params.loanId}. Vui lòng kiểm
+                tra lại đường dẫn hoặc quay lại trang danh sách đơn vay.
               </p>
             </CardContent>
           </Card>

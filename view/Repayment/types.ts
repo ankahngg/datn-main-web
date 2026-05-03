@@ -8,7 +8,7 @@ export type LoanStatus =
   | "PENDING_LIQUIDATION"
   | "LIQUIDATED";
 
-export type LoanForRepayment = {
+export type Loan = {
   id: number;
   loanId: bigint;
   applicationId: bigint;

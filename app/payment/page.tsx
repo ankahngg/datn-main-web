@@ -13,11 +13,14 @@ import {
   RepaymentDialog,
   EndLoanDialog,
 } from "@/view/Repayment/RepaymentActionDialogs";
-import { useRepaymentLoans } from "@/hooks/use-repayment-loans";
-import type { LoanForRepayment, RepaymentActionType } from "@/view/Repayment/types";
-import { id } from "zod/v4/locales";
+
+import type { Loan, RepaymentActionType } from "@/view/Repayment/types";
+
 import { formatUnits, parseUnits } from "viem";
-import { UserRepaymentLoanResponse } from "@/service/modules/repayment";
+
+import PageHeader from "@/components/shared/PageHeader";
+import { useGetLoans } from "@/hooks/use-get-loans";
+import { UserLoanResponse } from "@/model/Loan";
 
 export default function RepaymentPage() {
   const { address } = useAccount();
@@ -30,7 +33,7 @@ export default function RepaymentPage() {
   const [isEndLoanDialogOpen, setIsEndLoanDialogOpen] = useState(false);
 
   // Selected loan
-  const [selectedLoan, setSelectedLoan] = useState<UserRepaymentLoanResponse | null>(null);
+  const [selectedLoan, setSelectedLoan] = useState<UserLoanResponse | null>(null);
 
   // Transaction states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,14 +41,16 @@ export default function RepaymentPage() {
   const [txMessage, setTxMessage] = useState<string | null>(null);
 
   // Fetch repayment loans
-  const { data: repaymentLoans, isLoading: isLoadingLoans } = useRepaymentLoans({
-    filter: { borrower: address },
+  const { data: repaymentLoans, isLoading: isLoadingLoans } = useGetLoans({
+    filter: { 
+      user1: address, // borrower
+     },
     page: 0,
     size: 10,
     sort: "timeCreated,DESC",
   });
 
-  const loans: LoanForRepayment[] = useMemo(() => {
+  const loans: Loan[] = useMemo(() => {
     return repaymentLoans?.content.map((loan) => ({
       id: loan.id,
       loanId: loan.loanId,
@@ -68,7 +73,7 @@ export default function RepaymentPage() {
   }, [repaymentLoans]);
 
   // Handle action buttons
-  const handleTableAction = (action: RepaymentActionType, loan: LoanForRepayment) => {
+  const handleTableAction = (action: RepaymentActionType, loan: Loan) => {
     const selected = repaymentLoans?.content.find((l) => l.id === loan.id) ?? null;
     setSelectedLoan(selected);
     
@@ -141,12 +146,10 @@ export default function RepaymentPage() {
       message="Kết nối ví để thực hiện hoàn trả khoản vay và cập nhật dư nợ."
     >
       <div className="space-y-6 pb-8">
-        <div className="rounded-2xl bg-sidebar p-5 shadow-lg">
-          <h1 className="text-2xl font-heading">Trả vay</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Quản lý và trả nợ các khoản vay của bạn
-          </p>
-        </div>
+        <PageHeader 
+          title="Khoản vay của bạn"
+          description="Xem và quản lý các khoản vay hiện tại của bạn. Bạn có thể xem chi tiết, lịch sử thanh toán, thực hiện trả nợ hoặc kết thúc khoản vay."
+        />
 
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-sm">

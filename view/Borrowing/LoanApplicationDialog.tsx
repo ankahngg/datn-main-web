@@ -34,8 +34,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import clsx from "clsx"
+import { LoanApplicationSubmitValues } from "@/model/LoanApplication"
 
-import type { LoanApplicationSubmitValues } from "./types"
+
 
 const quickPercentages = [25, 50, 100]
 
@@ -256,7 +257,7 @@ export function LoanApplicationDialog({
   return (
     <Dialog open={isModalOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="my-btn bg-blue-700 text-blue-50 hover:bg-blue-700/70">
+        <Button className="my-btn ">
           <HandCoins className="size-4" />
           Tạo đơn vay
         </Button>

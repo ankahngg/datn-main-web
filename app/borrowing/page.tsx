@@ -11,13 +11,14 @@ import WalletRequired from "@/components/wallet-required";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { LoanApplicationDialog } from "@/view/Borrowing/LoanApplicationDialog";
 import { LoanApplicationTable } from "@/view/Borrowing/LoanApplicationTable";
-import { mockLoanApplications, mockLoanOffers } from "@/view/Borrowing/mock-data";
+
 import { useUserBalance, useUserNfts } from "@/hooks/use-user-asset";
-import type {
-  LoanApplication,
-  LoanApplicationSubmitValues,
-} from "@/view/Borrowing/types";
+
 import { useUserLoanApplications } from "@/hooks/use-user-loan";
+import { time } from "console";
+import { formatDate } from "@/utils";
+import PageHeader from "@/components/shared/PageHeader";
+import { LoanApplication, LoanApplicationSubmitValues } from "@/model/LoanApplication";
 
 export default function BorrowingPage() {
   const router = useRouter();
@@ -32,7 +33,13 @@ export default function BorrowingPage() {
   const [cancelTxStatus, setCancelTxStatus] = useState<"idle" | "success" | "error" | null>(null);
   const [cancelTxMessage, setCancelTxMessage] = useState<string | null>(null);
   const { data: userBalance } = useUserBalance(address);
-  const { data: userNfts } = useUserNfts(address);
+  const { data: userNfts } = useUserNfts(
+    {
+      filter: {
+        user: address,
+      },
+    }
+  );
   const {data: userLoanApplications, isLoading: isLoadingLoanApplications } = useUserLoanApplications({
     filter: { user1: address },
     page: 0,
@@ -42,7 +49,7 @@ export default function BorrowingPage() {
 
   const ethBalance = userBalance ? Number(formatEther(userBalance.ethBalance)) : 0;
   const availableNfts = (userNfts?.content ?? [])
-    .filter((nft) => !nft.isWithdrawn)
+    .filter((nft) => nft.status === "DEPOSITED" || nft.status === "COLLATERALIZED")
     .map((nft) => ({
       id: nft.id,
       nftAddress: nft.nftAddress,
@@ -59,20 +66,13 @@ export default function BorrowingPage() {
       applicationId: application.applicationId,
       borrower: application.borrower,
       collateralAsset : application.collateralType,
-      collateralAmount: application.collateralType === "ETHER" ? formatEther(application.collateralAmount) : application.collateralAmount.toString(),
-            status: application.status,
-            createdAt: application.timeCreated ?? application.createdAt,
+      collateralAmount: application.collateralAmount,
+      status: application.status,
+      timeCreated: formatDate(application.timeCreated),
       offerCount: application.offerCount ?? BigInt(0),
       // NFT fields
-      nftAddress: application.nft?.nftAddress,
-      tokenId: application.nft?.tokenId ,
-      nftId: application.nft?.nftId,
-      nftName: application.nft?.nftName,
-      nftDescription: application.nft?.nftDescription,
-      nftCollectionName: application.nft?.nftCollectionName,
-      nftImageUrl: application.nft?.nftImageUrl,
-      
-      offerId: application.offerId,
+      nftId: application.nftId,
+      acceptedOfferId: application.acceptedOfferId,
       timeAccepted: application.timeAccepted,
 
     })) ?? [];
@@ -176,12 +176,11 @@ export default function BorrowingPage() {
       message="Kết nối ví để mở vị thế vay và theo dõi tài sản thế chấp của bạn."
     >
       <div className="space-y-6 pb-8">
-        <div className="rounded-2xl bg-sidebar p-5 shadow-lg">
-          <h1 className="text-2xl font-heading">Vay tài sản</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Đơn vay là trung tâm, offer vay được quản lý trong chi tiết của từng đơn vay.
-          </p>
-        </div>
+        <PageHeader 
+          title="Đơn vay của bạn"
+          description="Tạo đơn vay mới và quản lý các đơn vay hiện có. Bạn có thể xem chi tiết từng đơn vay và trạng thái của chúng."
+        />
+        
 
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-sm">

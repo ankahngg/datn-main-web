@@ -2,19 +2,18 @@
 
 import { useEffect } from "react";
 import { useAccount } from "wagmi";
-import { formatUnits, parseUnits } from "viem";
+import { parseUnits } from "viem";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { shortAddress } from "@/components/shared/data-table";
+import { DetailCard } from "@/components/shared/DetailCard";
 import { useUserBalance } from "@/hooks/use-user-asset";
-import type { LoanForRepayment } from "./types";
-import { UserRepaymentLoanResponse } from "@/service/modules/repayment";
+import { UserLoanResponse } from "@/service/modules/loan";
+import { formatUsdc, shortAddress } from "@/utils";
 
 const repaymentSchema = z.object({
   amount: z
@@ -38,7 +37,7 @@ type RepaymentFormValues = z.infer<typeof repaymentSchema>;
 type RepaymentDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  loan: UserRepaymentLoanResponse | null;
+  loan: UserLoanResponse | null;
   onConfirm: (amount: string) => Promise<void> | void;
   isSubmitting?: boolean;
   txStatus?: "idle" | "success" | "error" | null;
@@ -83,13 +82,9 @@ export function RepaymentDialog({
   if (normalizedWatchAmount) {
     try {
       const amountUnits = parseUnits(normalizedWatchAmount, 6);
-
-      if (amountUnits <= userBalanceUnits) {
-        balanceAfterRepayment = userBalanceUnits - amountUnits;
-      }
-      else {
-        balanceAfterRepayment = BigInt(0);
-      }
+      if (amountUnits <= userBalanceUnits) balanceAfterRepayment = userBalanceUnits - amountUnits;
+      else balanceAfterRepayment = BigInt(0);
+      
     } catch {
       balanceAfterRepayment = null;
     }
@@ -116,10 +111,6 @@ export function RepaymentDialog({
     await onConfirm(normalizedAmount);
   };
 
-  const applyQuickAmount = (amount: string) => {
-    form.setValue("amount", amount, { shouldValidate: true, shouldDirty: true });
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto bg-background text-foreground sm:max-w-2xl">
@@ -129,34 +120,42 @@ export function RepaymentDialog({
 
         <div className="space-y-6">
           <section className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Người cho vay</Label>
-              <p className="mt-2 font-mono text-sm text-foreground">{shortAddress(loan.lender)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Khoản vay từ {loan.timeCreated}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Số tiền vay</Label>
-              <p className="mt-2 text-lg font-semibold text-foreground">{formatUnits(loan.loanAmount,6)} USDC</p>
-              <p className="mt-1 text-xs text-muted-foreground">Tổng phải trả: {formatUnits(loan.totalAmountHaveToPay,6)} USDC</p>
-            </div>
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Đã thanh toán</Label>
-              <p className="mt-2 text-lg font-semibold text-emerald-400">{formatUnits(loan.amountPaid,6)} USDC</p>
-            </div>
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dư nợ còn lại</Label>
-              <p className="mt-2 text-lg font-semibold text-amber-300">{formatUnits(amountRemainingUnits,6)} USDC</p>
-            </div>
+            <DetailCard
+              label="Người cho vay"
+              value={shortAddress(loan.lender)}
+              valueClassName="font-mono"
+              helperText={`Khoản vay từ ${loan.timeCreated}`}
+            />
+            <DetailCard
+              label="Số tiền vay"
+              value={`${formatUsdc(loan.loanAmount)} USDC`}
+          
+              helperText={`Tổng phải trả: ${formatUsdc(loan.totalAmountHaveToPay)} USDC`}
+            />
+            <DetailCard
+              label="Đã thanh toán"
+              value={`${formatUsdc(loan.amountPaid)} USDC`}
+              valueClassName="text-emerald-400"
+            />
+            <DetailCard
+              label="Dư nợ còn lại"
+              value={`${formatUsdc(amountRemainingUnits)} USDC`}
+              valueClassName="text-amber-300"
+            />
           </section>
 
-          <section className="rounded-xl border border-border bg-sidebar/80 p-4">
-            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Số dư USDC của bạn</Label>
-            <p className="mt-2 text-lg font-semibold text-foreground">{formatUnits(userBalanceUnits,6)} USDC</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {balanceAfterRepayment !== null
-                ? `Số dư sau khi trả: ${formatUnits(balanceAfterRepayment, 6)} USDC`
-                : "Nhập số tiền để xem số dư sau khi trả"}
-            </p>
+          <section>
+            <DetailCard
+              label="Số dư USDC của bạn"
+              value={`${formatUsdc(userBalanceUnits)} USDC`}
+              valueClassName="text-lg font-semibold"
+              helperText={
+                balanceAfterRepayment !== null
+                  ? `Số dư sau khi trả: ${formatUsdc(balanceAfterRepayment)} USDC`
+                  : "Nhập số tiền để xem số dư sau khi trả"
+              }
+              helperClassName="text-sm"
+            />
           </section>
 
           <Form {...form}>

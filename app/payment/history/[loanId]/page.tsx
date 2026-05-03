@@ -4,25 +4,22 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard } from "@/components/shared/DetailCard";
 import { PaymentHistoryTable } from "@/view/Repayment/PaymentHistoryTable";
-import { getLoanPaymentHistory, getLoansForRepayment } from "@/service/modules/repayment";
-import { loanStatusLabelMap, loanStatusVariantMap } from "@/view/Repayment/types";
+import {
+  getLoanPaymentHistory,
+  getLoans,
+} from "@/service/modules/loan";
+import {
+  loanStatusLabelMap,
+  loanStatusVariantMap,
+} from "@/view/Repayment/types";
 import { formatUnits } from "viem";
+import BackButton from "@/components/shared/BackButton";
 
 function truncateAddress(address: string, startChars = 6, endChars = 4) {
   if (address.length <= startChars + endChars) return address;
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
-}
-
-function formatAmount(value: string | bigint, decimals = 6) {
-  const numericValue = typeof value === "bigint" ? Number(value) / Math.pow(10, decimals) : Number(value);
-  if (Number.isNaN(numericValue)) {
-    return String(value);
-  }
-
-  return new Intl.NumberFormat("vi-VN", {
-    maximumFractionDigits: 6,
-  }).format(numericValue);
 }
 
 function formatDate(dateString: string) {
@@ -51,16 +48,14 @@ async function PaymentHistoryContent({ params }: PageProps) {
   const history = historyData.content || [];
 
   // Fetch all loans to find the matching loan details
-  const loansData = await getLoansForRepayment(
-    {
-      filter: {},
-        pageable: {
-          page: 0,
-          size: 100,
-          sort: "timeCreated,DESC",
-        },
+  const loansData = await getLoans({
+    filter: {},
+    pageable: {
+      page: 0,
+      size: 100,
+      sort: "timeCreated,DESC",
     },
-  );
+  });
 
   const loan = loansData.content.find((l) => l.loanId === loanIdBigInt);
 
@@ -68,12 +63,7 @@ async function PaymentHistoryContent({ params }: PageProps) {
     return (
       <div className="space-y-6 pb-8">
         <div className="flex items-center gap-2 mb-6">
-          <Link href="/payment">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 size-4" />
-              Quay lại
-            </Button>
-          </Link>
+          <BackButton title="Quay lại " destination="/payment" />
         </div>
 
         <div className="text-center py-12 text-muted-foreground">
@@ -89,27 +79,26 @@ async function PaymentHistoryContent({ params }: PageProps) {
     amountPaid: formatUnits(loan.amountPaid, 6),
   };
 
-  const amountRemaining = BigInt(loan.totalAmountHaveToPay) - BigInt(loan.amountPaid);
+  const amountRemaining =
+    BigInt(loan.totalAmountHaveToPay) - BigInt(loan.amountPaid);
 
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
-        <Link href="/payment">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="mr-2 size-4" />
-            Quay lại
-          </Button>
-        </Link>
+        <BackButton title="Quay lại " destination="/payment" />
       </div>
 
       {/* Loan Summary Card */}
       <Card className="bg-sidebar p-6 border-border">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-heading text-foreground">Lịch sử thanh toán</h1>
+            <h1 className="text-2xl font-heading text-foreground">
+              Lịch sử thanh toán
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Khoản vay: {truncateAddress(loan.borrower)} → {truncateAddress(loan.lender)}
+              Khoản vay: {truncateAddress(loan.borrower)} →{" "}
+              {truncateAddress(loan.lender)}
             </p>
           </div>
           <Badge variant={loanStatusVariantMap[loan.loanStatus]}>
@@ -119,51 +108,55 @@ async function PaymentHistoryContent({ params }: PageProps) {
 
         {/* Loan Details Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-background rounded p-4">
-            <p className="text-xs text-muted-foreground mb-1">Số tiền vay</p>
-            <p className="text-lg font-semibold text-foreground">
-              {formattedLoan.loanAmount} USDC
-            </p>
-          </div>
+          <DetailCard
+            label="Số tiền vay"
+            value={`${formattedLoan.loanAmount} USDC`}
+            className="detail-card-bg"
+            valueClassName="text-lg font-semibold"
+          />
 
-          <div className="bg-background rounded p-4">
-            <p className="text-xs text-muted-foreground mb-1">Tổng phải trả</p>
-            <p className="text-lg font-semibold text-foreground">
-              {formattedLoan.totalAmountHaveToPay} USDC
-            </p>
-          </div>
+          <DetailCard
+            label="Tổng phải trả"
+            value={`${formattedLoan.totalAmountHaveToPay} USDC`}
+            className="detail-card-bg"
+            valueClassName="text-lg font-semibold"
+          />
 
-          <div className="bg-background rounded p-4">
-            <p className="text-xs text-muted-foreground mb-1">Đã thanh toán</p>
-            <p className="text-lg font-semibold text-emerald-500">
-              {formattedLoan.amountPaid} USDC
-            </p>
-          </div>
+          <DetailCard
+            label="Đã thanh toán"
+            value={`${formattedLoan.amountPaid} USDC`}
+            className="detail-card-bg"
+            valueClassName="text-lg font-semibold text-emerald-500"
+          />
 
-          <div className="bg-background rounded p-4">
-            <p className="text-xs text-muted-foreground mb-1">Còn lại</p>
-            <p className="text-lg font-semibold text-orange-500">
-              {formatAmount(amountRemaining)} USDC
-            </p>
-          </div>
+          <DetailCard
+            label="Còn lại"
+            value={`${formatUnits(amountRemaining, 6)} USDC`}
+            className="detail-card-bg"
+            valueClassName="text-lg font-semibold text-orange-500"
+          />
         </div>
 
         {/* Additional Info */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
-          <div>
-            <p className="text-xs text-muted-foreground">Lãi suất</p>
-            <p className="text-sm font-medium text-foreground">{loan.interestRate.toString()}%</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Thời hạn</p>
-            <p className="text-sm font-medium text-foreground">{loan.duration.toString()} ngày</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Ngày tạo</p>
-            <p className="text-sm font-medium text-foreground">
-              {formatDate(loan.timeCreated)}
-            </p>
-          </div>
+          <DetailCard
+            label="Lãi suất"
+            value={`${loan.interestRate.toString()}%`}
+            className="detail-card-bg"
+            valueClassName="font-medium"
+          />
+          <DetailCard
+            label="Thời hạn"
+            value={`${loan.duration.toString()} ngày`}
+            className="detail-card-bg"
+            valueClassName="font-medium"
+          />
+          <DetailCard
+            label="Ngày tạo"
+            value={formatDate(loan.timeCreated)}
+            className="detail-card-bg"
+            valueClassName="font-medium"
+          />
         </div>
       </Card>
 
@@ -172,7 +165,9 @@ async function PaymentHistoryContent({ params }: PageProps) {
         <PaymentHistoryTable history={history} />
       ) : (
         <Card className="bg-sidebar p-8 border-border text-center">
-          <p className="text-muted-foreground">Chưa có lịch sử thanh toán cho khoản vay này</p>
+          <p className="text-muted-foreground">
+            Chưa có lịch sử thanh toán cho khoản vay này
+          </p>
         </Card>
       )}
     </div>

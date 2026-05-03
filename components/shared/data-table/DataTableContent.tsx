@@ -12,13 +12,16 @@ type DataTableContentProps<TData> = {
   table: TableType<TData>;
   columnsLength: number;
   emptyMessage: string;
+  highlightRowId?: string;
 };
 
 export function DataTableContent<TData>({
   table,
   columnsLength,
   emptyMessage,
+  highlightRowId,
 }: DataTableContentProps<TData>) {
+  console.log("Rendering DataTableContent with highlightRowId:", highlightRowId);
   return (
     <Table>
       <TableHeader>
@@ -28,7 +31,10 @@ export function DataTableContent<TData>({
               <TableHead key={header.id} className="text-muted-foreground">
                 {header.isPlaceholder
                   ? null
-                  : flexRender(header.column.columnDef.header, header.getContext())}
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
               </TableHead>
             ))}
           </TableRow>
@@ -36,18 +42,44 @@ export function DataTableContent<TData>({
       </TableHeader>
       <TableBody>
         {table.getRowModel().rows.length ? (
-          table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id} className="text-foreground hover:bg-foreground/5">
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))
+          table.getRowModel().rows.map((row) => {
+            console.log("Rendering row:", row.id, "highlightRowId:", highlightRowId);
+            if (highlightRowId && row.id === highlightRowId) {
+              return (
+                <TableRow
+                  key={row.id}
+                  className="text-foreground hover:bg-foreground/5 hilight-row"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            }
+            return (
+              <TableRow
+                key={row.id}
+                className="text-foreground hover:bg-foreground/5"
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })
         ) : (
           <TableRow>
-            <TableCell colSpan={columnsLength} className="h-24 text-center text-muted-foreground">
+            <TableCell
+              colSpan={columnsLength}
+              className="h-24 text-center text-muted-foreground"
+            >
               {emptyMessage}
             </TableCell>
           </TableRow>

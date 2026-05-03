@@ -34,9 +34,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
-import type { AssetTransferSubmitValues, NftDeposit } from "./types"
-import type { AssetBalance } from "./types"
+
 import clsx from "clsx"
+import { AssetBalance, AssetTransferSubmitValues, UserNft } from "@/model/User"
 
 const quickPercentages = [25, 50, 100]
 
@@ -67,7 +67,7 @@ type AssetTransferFormValues = z.infer<ReturnType<typeof createAssetTransferSche
 
 type AssetTransferDialogProps = {
   balances: AssetBalance[]
-  availableNfts: NftDeposit[]
+  availableNfts: UserNft[]
   onSubmitTransfer: (values: AssetTransferSubmitValues) => void
   isSubmitting?: boolean
   txStatus?: "idle" | "success" | "error" | null

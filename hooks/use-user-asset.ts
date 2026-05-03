@@ -1,6 +1,7 @@
 "use client";
 
-import { getUserBalance, getUserNfts, UserBalanceResponse } from "@/service/modules/asset";
+import { UserBalanceResponse, UserNftFilter } from "@/model/User";
+import { getUserBalance, getUserNfts, getUserNftsById } from "@/service/modules/asset";
 import { useQuery } from "@tanstack/react-query";
 
 const USER_ASSET_BALANCE_KEY = "userAssetBalance";
@@ -23,20 +24,47 @@ export function useUserBalance(address: string | undefined) {
   return query;
 }
 
-export function useUserNfts(address: string | undefined) {
-  const enabled = Boolean(address);
+export interface UseGetUserNftsOptions {
+  filter: UserNftFilter;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+export function useUserNfts(options: UseGetUserNftsOptions) {
+  const { filter, page = 0, size = 10, sort = "timeCreated,DESC" } = options;
+  const query = useQuery({
+    queryKey: [USER_ASSET_NFT_KEY, filter, page, size, sort],
+    queryFn: () => {
+      
+      return getUserNfts(
+        {
+          filter,
+          page,
+          size,
+          sort,
+        }
+       );
+    }
+  });
+
+  return query;
+}
+
+export function useUserNFTById(nftId: bigint | undefined) {
+  const enabled = Boolean(nftId);
 
   const query = useQuery({
-    queryKey: [USER_ASSET_NFT_KEY, address],
+    queryKey: [USER_ASSET_NFT_KEY, nftId?.toString()],
     queryFn: () => {
-      if (!address) {
-        throw new Error("Wallet address is required");
+      if (!nftId) {
+        throw new Error("NFT ID is required");
       }
-      return getUserNfts(address);
+      return getUserNftsById(nftId);
     }
     ,
     enabled,
   });
-
+  
   return query;
 }

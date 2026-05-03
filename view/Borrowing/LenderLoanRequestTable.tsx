@@ -3,7 +3,15 @@
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { XCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CheckCircle, MoreHorizontal, XCircle } from "lucide-react";
 import {
   type ColumnDef,
   getCoreRowModel,
@@ -17,23 +25,21 @@ import {
   DataTableContent,
   DataTablePagination,
   DataTableToolbar,
-  shortAddress,
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
-
-import {
-  loanOfferStatusLabelMap,
-  loanRequestStatusVariantMap,
-  type LoanOffer,
-} from "./types";
-
+import { shortAddress } from "@/utils";
+import { applicationStatusVariantMap, applicationStatusLabelMap } from "@/model/LoanApplication";
+import { LoanOffer } from "@/model/LoanOffer";
 
 type LenderLoanRequestTableProps = {
   requests: LoanOffer[];
   title?: string;
   emptyText?: string;
   onCancelRequest?: (offerId: bigint) => void;
+  onAcceptRequest?: (offerId: bigint) => void;
+  canAcceptRequest?: (offer: LoanOffer) => boolean;
+  hilightRowId?: string;
 };
 
 export function LenderLoanRequestTable({
@@ -41,6 +47,9 @@ export function LenderLoanRequestTable({
   title,
   emptyText,
   onCancelRequest,
+  onAcceptRequest,
+  canAcceptRequest,
+  hilightRowId,
 }: LenderLoanRequestTableProps) {
   const {
     sorting,
@@ -51,7 +60,6 @@ export function LenderLoanRequestTable({
     setGlobalFilter,
     clearFilters,
   } = useDataTableState();
-
   const columns = React.useMemo<ColumnDef<LoanOffer>[]>(
     () => [
       {
@@ -82,11 +90,11 @@ export function LenderLoanRequestTable({
         header: sortableHeader<LoanOffer>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.status;
-          return <Badge variant={loanRequestStatusVariantMap[status]}>{loanOfferStatusLabelMap[status]}</Badge>;
+          return <Badge variant={applicationStatusVariantMap[status]}>{applicationStatusLabelMap[status]}</Badge>;
         },
       },
       {
-        accessorKey: "createdAt",
+        accessorKey: "timeCreated",
         header: sortableHeader<LoanOffer>("Ngày tạo"),
       },
       {
@@ -95,23 +103,45 @@ export function LenderLoanRequestTable({
         cell: ({ row }) => {
           const offer = row.original;
           const isCancelable = offer.status === "CREATED";
+          const isAcceptable = canAcceptRequest ? canAcceptRequest(offer) : true;
 
           return (
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => onCancelRequest?.(offer.offerId)}
-              disabled={!isCancelable}
-              className="h-8 bg-red-500/10 text-red-300 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <XCircle className="size-4" />
-              Hủy đề nghị
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                  <MoreHorizontal className="size-4" />
+                  <span className="sr-only">Mo menu thao tac</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-sidebar border border-border text-foreground">
+                <DropdownMenuLabel className="text-foreground">Hành động</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {onAcceptRequest && (
+                  <DropdownMenuItem
+                    onClick={() => onAcceptRequest(offer.offerId)}
+                    disabled={!isAcceptable}
+                    className="cursor-pointer"
+                  >
+                    <CheckCircle className="size-4" />
+                    Chấp nhận vay
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={() => onCancelRequest?.(offer.offerId)}
+                  variant="destructive"
+                  disabled={!isCancelable}
+                  className="cursor-pointer"
+                >
+                  <XCircle className="size-4" />
+                  Hủy đề nghị
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           );
         },
       },
     ],
-    [onCancelRequest],
+    [canAcceptRequest, onAcceptRequest, onCancelRequest],
   );
 
   const table = useReactTable({
@@ -149,10 +179,10 @@ export function LenderLoanRequestTable({
             table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
           options: [
             { value: "all", label: "Tất cả trạng thái" },
-            { value: "PENDING_CREATED", label: loanOfferStatusLabelMap.PENDING_CREATED },
-            { value: "CREATED", label: loanOfferStatusLabelMap.CREATED },
-            { value: "PENDING_CANCELED", label: loanOfferStatusLabelMap.PENDING_CANCELED },
-            { value: "CANCELED", label: loanOfferStatusLabelMap.CANCELED },
+            { value: "PENDING_CREATED", label: applicationStatusLabelMap.PENDING_CREATED },
+            { value: "CREATED", label: applicationStatusLabelMap.CREATED },
+            { value: "PENDING_CANCELED", label: applicationStatusLabelMap.PENDING_CANCELED },
+            { value: "CANCELED", label: applicationStatusLabelMap.CANCELED },
           ],
         }}
         onClearFilters={() => {
@@ -165,6 +195,7 @@ export function LenderLoanRequestTable({
         table={table}
         columnsLength={columns.length}
         emptyMessage={emptyText ?? "Chưa có offer nào"}
+        highlightRowId={hilightRowId}
       />
 
       <DataTablePagination table={table} />

@@ -2,13 +2,12 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { LoanForRepayment } from "./types";
-import { UserRepaymentLoanResponse } from "@/service/modules/repayment";
+import { UserLoanResponse } from "@/service/modules/loan";
 
 type RepaymentHistoryDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  loan: UserRepaymentLoanResponse | null;
+  loan: UserLoanResponse | null;
 };
 
 export function RepaymentHistoryDialog({ open, onOpenChange, loan }: RepaymentHistoryDialogProps) {

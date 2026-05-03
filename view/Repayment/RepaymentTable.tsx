@@ -25,7 +25,6 @@ import {
   DataTableContent,
   DataTablePagination,
   DataTableToolbar,
-  shortAddress,
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
@@ -33,14 +32,15 @@ import {
 import {
   loanStatusLabelMap,
   loanStatusVariantMap,
-  type LoanForRepayment,
+  type Loan,
   type RepaymentActionType,
 } from "./types";
+import { shortAddress } from "@/utils";
 
 type RepaymentTableProps = {
-  loans: LoanForRepayment[];
+  loans: Loan[];
   isLoading?: boolean;
-  onAction: (action: RepaymentActionType, loan: LoanForRepayment) => void;
+  onAction: (action: RepaymentActionType, loan: Loan) => void;
 };
 
 export function RepaymentTable({
@@ -58,11 +58,11 @@ export function RepaymentTable({
     clearFilters,
   } = useDataTableState();
 
-  const columns = React.useMemo<ColumnDef<LoanForRepayment>[]>(
+  const columns = React.useMemo<ColumnDef<Loan>[]>(
     () => [
       {
         accessorKey: "lender",
-        header: sortableHeader<LoanForRepayment>("Người cho vay"),
+        header: sortableHeader<Loan>("Người cho vay"),
         cell: ({ row }) => (
           <span className="font-mono text-foreground">
             {shortAddress(row.original.lender)}
@@ -71,28 +71,28 @@ export function RepaymentTable({
       },
       {
         accessorKey: "loanAmount",
-        header: sortableHeader<LoanForRepayment>("Số tiền vay"),
+        header: sortableHeader<Loan>("Số tiền vay"),
         cell: ({ row }) => (
           <span className="text-foreground">{row.original.loanAmount}</span>
         ),
       },
       {
         accessorKey: "totalAmountHaveToPay",
-        header: sortableHeader<LoanForRepayment>("Tổng phải trả"),
+        header: sortableHeader<Loan>("Tổng phải trả"),
         cell: ({ row }) => (
           <span className="text-foreground">{row.original.totalAmountHaveToPay}</span>
         ),
       },
       {
         accessorKey: "amountPaid",
-        header: sortableHeader<LoanForRepayment>("Đã trả"),
+        header: sortableHeader<Loan>("Đã trả"),
         cell: ({ row }) => (
           <span className="text-foreground">{row.original.amountPaid}</span>
         ),
       },
       {
         accessorKey: "loanStatus",
-        header: sortableHeader<LoanForRepayment>("Trạng thái"),
+        header: sortableHeader<Loan>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.loanStatus;
           return (
@@ -104,7 +104,7 @@ export function RepaymentTable({
       },
       {
         accessorKey: "timeCreated",
-        header: sortableHeader<LoanForRepayment>("Thời gian tạo"),
+        header: sortableHeader<Loan>("Thời gian tạo"),
         cell: ({ row }) => (
           <span className="text-foreground">
             {new Date(row.original.timeCreated).toLocaleDateString("vi-VN")}
@@ -113,7 +113,7 @@ export function RepaymentTable({
       },
       {
         accessorKey: "duration",
-        header: sortableHeader<LoanForRepayment>("Thời hạn"),
+        header: sortableHeader<Loan>("Thời hạn"),
         cell: ({ row }) => (
           <span className="text-foreground">{row.original.duration}</span>
         ),

@@ -14,20 +14,19 @@ import {
 } from "@/components/ui/card";
 import WalletRequired from "@/components/wallet-required";
 import { AssetTransferDialog } from "@/view/Asset/AssetTransferDialog";
-import { NftDepositTable } from "@/view/Asset/NftDepositTable";
+
 import { TransactionHistoryTable } from "@/view/Asset/TransactionHistoryTable";
-import type {
-  AssetTransferSubmitValues,
-  AssetBalance,
-  NftDeposit,
-  Transaction,
-  NftDepositStatus,
-} from "@/view/Asset/types";
+
 import { contractAddress, usdcAddress } from "@/config/app.config";
 import { useUserBalance, useUserNfts } from "@/hooks/use-user-asset";
 import { FullScreenError } from "@/MyComponent/FullScreenError";
 import { FullScreenLoading } from "@/MyComponent/FullLoadingScreen";
 import { useBankTransactions } from "@/hooks/use-bank-transactions";
+import { formatDate } from "@/utils";
+import PageHeader from "@/components/shared/PageHeader";
+import { UserNft, AssetBalance, AssetTransferSubmitValues } from "@/model/User";
+import { Transaction } from "@/model/BankTransaction";
+import { UserNftTable } from "@/view/Asset/NftTable";
 
 const erc20Abi = [
   {
@@ -85,42 +84,40 @@ export default function AssetsPage() {
   });
   
   const {data: userBalance, isLoading: userBalanceLoading, isError: userBalanceIsError, error: userBalanceError} = useUserBalance(useAccount().address);
-  const {data: userNfts, isLoading: userNftsLoading, isError: userNftsIsError, error: userNftsError} = useUserNfts(useAccount().address);
+  const {data: userNfts, isLoading: userNftsLoading, isError: userNftsIsError, error: userNftsError} = useUserNfts(
+    {
+      filter: {
+        user: address,
+      },
+    }
+  );
   const {data: history, isLoading: historyLoading, isError: historyIsError, error: historyError} = useBankTransactions ({
     filter: {
       user: address,
     },
   });
 
-  const nftDeposits = useMemo((): NftDeposit[] => {
+  const UserNfts = useMemo((): UserNft[] => {
     if (userNfts) {
       return userNfts.content.map((nft) => ({
         id: nft.id,
+        nftId: nft.nftId,
         nftAddress: nft.nftAddress,
-        tokenId: nft.tokenId.toString(),
+        tokenId: nft.tokenId,
         name: `NFT #${nft.nftId}`,
-        depositedAt: new Date(nft.timeCreated).toLocaleString(),
-        status: nft.isWithdrawn ? "Đã rút" : "Đã gửi" as NftDepositStatus,
+        depositedAt: formatDate(nft.timeCreated),
+        status: nft.status
+        
       }));
     }
     return [];
   }
   , [userNfts]);
-  console.log("nftDeposits :", userNfts);
+  console.log("UserNfts :", userNfts);
 
-  const availableNfts = useMemo((): NftDeposit[] => {
-    if (userNfts) {
-      return userNfts.content.map((nft) => ({
-        id: nft.id,
-        nftAddress: nft.nftAddress,
-        tokenId: nft.tokenId.toString(),
-        name: `NFT #${nft.nftId}`,
-        depositedAt: new Date(nft.timeCreated).toLocaleString(),
-        status: nft.isWithdrawn ? "Đã rút" : "Đã gửi" as NftDepositStatus,
-      })).filter(nft => nft.status === "Đã gửi"); // Chỉ lấy những NFT chưa gửi để hiển thị trong phần gửi thêm
-    }
-    return [];
-  }, [userNfts]);
+  const availableNfts = useMemo(() => {
+    return UserNfts.filter((nft) => nft.status === "DEPOSITED" || nft.status === "COLLATERALIZED");
+  }, [UserNfts]);
   console.log("availableNfts :", availableNfts);
 
    const balances = useMemo((): AssetBalance[] => {
@@ -141,8 +138,8 @@ export default function AssetsPage() {
         id: tx.id,
         type: tx.bankAction,
         asset: tx.bankAsset,
-        amount: tx.bankAsset === "USDC" ? formatUnits(tx.amount, 6) : tx.bankAsset === "ETHER" ? formatEther(tx.amount) : '1', // NFT luôn hiển thị 1 vì mỗi giao dịch chỉ liên quan đến 1 NFT
-        time: tx.eventTimestamp,
+        amount: tx.amount,
+        time: formatDate(tx.eventTimestamp),
         status: tx.status,
       }));
     }
@@ -280,12 +277,10 @@ export default function AssetsPage() {
       message="Kết nối ví để xem số dư, quản lý NFT và thực hiện giao dịch gửi/rút tài sản."
     >
       <div className="space-y-6 pb-8">
-        <div className="rounded-2xl bg-sidebar p-5 shadow-lg">
-          <h1 className="text-2xl font-heading">Gửi/rút tài sản</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Quản lý tài sản thế chấp, gửi thêm hoặc rút về một cách nhanh chóng.
-          </p>
-        </div>
+        <PageHeader 
+          title="Tài sản của bạn"
+          description="Quản lý số dư ETH, USDC và NFT của bạn. Xem lịch sử giao dịch và các NFT đã gửi."
+        />
 
         <section className="space-y-3">
           <div className="flex flex-col gap-2">
@@ -332,7 +327,7 @@ export default function AssetsPage() {
             <span>Danh sách NFT đã gửi</span>
           </div>
 
-          <NftDepositTable deposits={nftDeposits} />
+          <UserNftTable data={UserNfts} />
         </section>
 
         <section className="space-y-3">

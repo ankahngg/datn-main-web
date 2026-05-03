@@ -25,16 +25,13 @@ import {
   DataTableContent,
   DataTablePagination,
   DataTableToolbar,
-  shortAddress,
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import {
-  loanApplicationStatusLabelMap,
-  loanStatusVariantMap,
-  type LoanApplication,
-} from "./types";
+import { formatUsdc, shortAddress } from "@/utils";
+import { LoanApplication, applicationStatusVariantMap, applicationStatusLabelMap } from "@/model/LoanApplication";
+import { formatEther } from "viem";
 
 
 
@@ -43,6 +40,10 @@ type LoanApplicationTableProps = {
   onViewOffers?: (loanApplicationId: bigint) => void;
   onCancelApplication?: (loanApplicationId: bigint) => void;
   onViewLoan?: (loanId: bigint) => void;
+  showViewOffersAction?: boolean;
+  showCancelAction?: boolean;
+  showViewLoanAction?: boolean;
+  title ?: string;
 };
 
 export function LoanApplicationTable({
@@ -50,6 +51,10 @@ export function LoanApplicationTable({
   onViewOffers,
   onCancelApplication,
   onViewLoan,
+  showViewOffersAction = true,
+  showCancelAction = true,
+  showViewLoanAction = true,
+  title = "Danh sách đơn vay của bạn",
 }: LoanApplicationTableProps) {
   const {
     sorting,
@@ -86,14 +91,22 @@ export function LoanApplicationTable({
         cell: ({ row }) => {
           const { collateralAsset, nftName } = row.original;
           if (collateralAsset === "NFT") {
-            return <span className="text-foreground">{nftName || "N/A"}</span>;
+            return <span className="text-foreground">{nftName || "Tài sản số"}</span>;
           }
-          return <span className="text-foreground">{collateralAsset === "ETH" ? "ethereum" : collateralAsset}</span>;
+          return <span className="text-foreground">{collateralAsset === "ETHER" ? "Etherium" : collateralAsset}</span>;
         },
       },
       {
         accessorKey: "collateralAmount",
         header: sortableHeader<LoanApplication>("Số lượng thế chấp"),
+        cell: ({ row }) => {
+          const collateralAsset = row.original.collateralAsset;
+          if (collateralAsset === "NFT") 
+            return row.original.collateralAmount;
+          if (collateralAsset === "ETHER")
+            return formatEther(row.original.collateralAmount);
+          return formatUsdc(row.original.collateralAmount);
+        },
       },
       {
         accessorKey: "status",
@@ -101,14 +114,14 @@ export function LoanApplicationTable({
         cell: ({ row }) => {
           const status = row.original.status;
           return (
-            <Badge variant={loanStatusVariantMap[status]}>
-              {loanApplicationStatusLabelMap[status]}
+            <Badge variant={applicationStatusVariantMap[status]}>
+              {applicationStatusLabelMap[status]}
             </Badge>
           );
         },
       },
       {
-        accessorKey: "createdAt",
+        accessorKey: "timeCreated",
         header: sortableHeader<LoanApplication>("Ngày tạo"),
       },
       {
@@ -120,6 +133,13 @@ export function LoanApplicationTable({
           const offerCount = loanApplication.offerCount || 0;
           const isCreated = loanApplication.status === "CREATED";
           const isAccepted = loanApplication.status === "ACCEPTED";
+          const canViewLoan = showViewLoanAction && isAccepted;
+          const hasActions =
+            showViewOffersAction || showCancelAction || canViewLoan;
+
+          if (!hasActions) {
+            return <span className="text-muted-foreground">N/A</span>;
+          }
 
           return (
             <DropdownMenu>
@@ -133,22 +153,26 @@ export function LoanApplicationTable({
                 <DropdownMenuLabel className="text-foreground">Hành động</DropdownMenuLabel>
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem onClick={() => onViewOffers?.(loanApplicationId)} className="cursor-pointer">
-                  <Eye className="size-4" />
-                  Xem Offer vay ({offerCount})
-                </DropdownMenuItem>
+                {showViewOffersAction && (
+                  <DropdownMenuItem onClick={() => onViewOffers?.(loanApplicationId)} className="cursor-pointer">
+                    <Eye className="size-4" />
+                    Xem Offer vay ({offerCount})
+                  </DropdownMenuItem>
+                )}
 
-                <DropdownMenuItem
-                  onClick={() => onCancelApplication?.(loanApplicationId)}
-                  variant="destructive"
-                  disabled={!isCreated}
-                  className="cursor-pointer"
-                >
-                  <XCircle className="size-4" />
-                  Hủy đơn vay
-                </DropdownMenuItem>
+                {showCancelAction && (
+                  <DropdownMenuItem
+                    onClick={() => onCancelApplication?.(loanApplicationId)}
+                    variant="destructive"
+                    disabled={!isCreated}
+                    className="cursor-pointer"
+                  >
+                    <XCircle className="size-4" />
+                    Hủy đơn vay
+                  </DropdownMenuItem>
+                )}
 
-                {isAccepted && (
+                {canViewLoan && (
                   <DropdownMenuItem onClick={() => onViewLoan?.(loanApplicationId)} className="cursor-pointer">
                     <WalletCards className="size-4" />
                     Xem khoản vay
@@ -187,7 +211,7 @@ export function LoanApplicationTable({
   });
 
   return (
-    <DataTableCard title="Danh sách đơn vay của bạn">
+    <DataTableCard title={title}>
       <DataTableToolbar
         searchPlaceholder="Tìm theo ID, người vay, tài sản..."
         searchValue={globalFilter}
@@ -198,12 +222,12 @@ export function LoanApplicationTable({
             table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
           options: [
             { value: "all", label: "Tất cả trạng thái" },
-            { value: "PENDING_CREATED", label: loanApplicationStatusLabelMap.PENDING_CREATED },
-            { value: "CREATED", label: loanApplicationStatusLabelMap.CREATED },
-            { value: "PENDING_ACCEPTED", label: loanApplicationStatusLabelMap.PENDING_ACCEPTED },
-            { value: "ACCEPTED", label: loanApplicationStatusLabelMap.ACCEPTED },
-            { value: "PENDING_CANCELED", label: loanApplicationStatusLabelMap.PENDING_CANCELED },
-            { value: "CANCELED", label: loanApplicationStatusLabelMap.CANCELED },
+            { value: "PENDING_CREATED", label: applicationStatusLabelMap.PENDING_CREATED },
+            { value: "CREATED", label: applicationStatusLabelMap.CREATED },
+            { value: "PENDING_ACCEPTED", label: applicationStatusLabelMap.PENDING_ACCEPTED },
+            { value: "ACCEPTED", label: applicationStatusLabelMap.ACCEPTED },
+            { value: "PENDING_CANCELED", label: applicationStatusLabelMap.PENDING_CANCELED },
+            { value: "CANCELED", label: applicationStatusLabelMap.CANCELED },
           ],
         }}
         onClearFilters={() => {

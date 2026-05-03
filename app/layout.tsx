@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import "@rainbow-me/rainbowkit/styles.css";
-import { cn } from "@/lib/utils";
 import Leftbar from "@/MyComponent/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Header from "@/MyComponent/header";
 import { Providers } from "@/provider/Providers";
+import { cn } from "@/utils";
 
 const inter = Inter({
   subsets: ["latin"],

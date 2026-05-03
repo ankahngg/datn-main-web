@@ -46,8 +46,6 @@ export function ConfirmDialog({
           <DialogDescription>{content}</DialogDescription>
         </DialogHeader>
 
-        
-
         <DialogFooter className="pt-3 bg-background text-foreground">
           {txMessage && (
                           <p

@@ -20,7 +20,7 @@ import {
 } from "@/components/shared/data-table";
 
 import { payActionLabelMap, payActionVariantMap } from "./types";
-import type { LoanPaymentHistoryResponse } from "@/service/modules/repayment";
+import type { LoanPayTransactionResponse } from "@/service/modules/loan";
 
 function formatAmount(value: bigint | number | string) {
   const numericValue = typeof value === "bigint" ? Number(value) / 1e6 : Number(value);
@@ -50,12 +50,12 @@ function truncateAddress(address: string, startChars = 6, endChars = 4) {
 }
 
 type PaymentHistoryTableProps = {
-  history: LoanPaymentHistoryResponse[];
+  history: LoanPayTransactionResponse[];
 };
 
 export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
   const { sorting, setSorting, columnFilters, setColumnFilters, globalFilter, setGlobalFilter, clearFilters: clearTableFilters } = useDataTableState();
-  const [actionFilter, setActionFilter] = React.useState<LoanPaymentHistoryResponse["action"] | "all">("all");
+  const [actionFilter, setActionFilter] = React.useState<LoanPayTransactionResponse["action"] | "all">("all");
 
   const actionOptions = React.useMemo(
     () => Array.from(new Set(history.map((tx) => tx.action))),
@@ -76,15 +76,15 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
     setActionFilter("all");
   }, [clearTableFilters]);
 
-  const columns = React.useMemo<ColumnDef<LoanPaymentHistoryResponse>[]>(
+  const columns = React.useMemo<ColumnDef<LoanPayTransactionResponse>[]>(
     () => [
       {
         accessorKey: "id",
-        header: sortableHeader<LoanPaymentHistoryResponse>("ID"),
+        header: sortableHeader<LoanPayTransactionResponse>("ID"),
       },
       {
         accessorKey: "action",
-        header: sortableHeader<LoanPaymentHistoryResponse>("Hành động"),
+        header: sortableHeader<LoanPayTransactionResponse>("Hành động"),
         cell: ({ row }) => {
           const action = row.original.action;
           return <Badge variant={payActionVariantMap[action]}>{payActionLabelMap[action]}</Badge>;
@@ -92,7 +92,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
       },
       {
         accessorKey: "amount",
-        header: sortableHeader<LoanPaymentHistoryResponse>("Số tiền"),
+        header: sortableHeader<LoanPayTransactionResponse>("Số tiền"),
         cell: ({ row }) => {
           const amount = row.original.amount;
           return <span>{formatAmount(amount)} USDC</span>;
@@ -100,7 +100,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
       },
       {
         accessorKey: "amountPaid",
-        header: sortableHeader<LoanPaymentHistoryResponse>("Đã thanh toán"),
+        header: sortableHeader<LoanPayTransactionResponse>("Đã thanh toán"),
         cell: ({ row }) => {
           const amountPaid = row.original.amountPaid;
           return <span>{formatAmount(amountPaid)} USDC</span>;
@@ -108,7 +108,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
       },
       {
         accessorKey: "totalAmountHaveToPay",
-        header: sortableHeader<LoanPaymentHistoryResponse>("Tổng phải trả"),
+        header: sortableHeader<LoanPayTransactionResponse>("Tổng phải trả"),
         cell: ({ row }) => {
           const total = row.original.totalAmountHaveToPay;
           return <span>{formatAmount(total)} USDC</span>;
@@ -116,7 +116,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
       },
       {
         accessorKey: "txHash",
-        header: sortableHeader<LoanPaymentHistoryResponse>("TX Hash"),
+        header: sortableHeader<LoanPayTransactionResponse>("TX Hash"),
         cell: ({ row }) => {
           const txHash = row.original.txHash;
           return (
@@ -128,7 +128,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
       },
       {
         accessorKey: "timeCreated",
-        header: sortableHeader<LoanPaymentHistoryResponse>("Thời gian"),
+        header: sortableHeader<LoanPayTransactionResponse>("Thời gian"),
         cell: ({ row }) => {
           const time = row.original.timeCreated;
           return <span className="text-sm text-foreground">{formatDate(time)}</span>;
@@ -180,7 +180,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
                     label: payActionLabelMap[action],
                   })),
                 ],
-                onChange: (value) => setActionFilter(value as LoanPaymentHistoryResponse["action"] | "all"),
+                onChange: (value) => setActionFilter(value as LoanPayTransactionResponse["action"] | "all"),
               }
             : undefined
         }

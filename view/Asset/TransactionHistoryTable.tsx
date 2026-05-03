@@ -20,13 +20,12 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import {
-  bankActionLabelMap,
-  transactionStatusLabelMap,
-  transactionStatusVariantMap,
-} from "./types";
-import type { Transaction } from "./types";
+
 import clsx from "clsx";
+import { bankActionLabelMap, transactionStatusVariantMap, transactionStatusLabelMap, Transaction } from "@/model/BankTransaction";
+import { formatUsdc } from "@/utils";
+import { formatEther } from "viem";
+
 
 function formatAmount(value: number | string) {
   const numericValue = Number(value);
@@ -98,11 +97,11 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
         cell: ({ row }) => {
           const amount = row.original.amount;
           const asset = row.original.asset;
-          return (
-            <span>
-              {formatAmount(amount)} {asset}
-            </span>
-          );
+          if (asset === "USDC") 
+            return formatUsdc(amount);
+          else if (asset === "ETHER")
+            return formatEther(amount);
+          return amount
         },
       },
       {

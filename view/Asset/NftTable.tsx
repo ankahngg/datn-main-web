@@ -15,23 +15,21 @@ import {
   DataTableContent,
   DataTablePagination,
   DataTableToolbar,
-  shortAddress,
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import type { NftDeposit, NftDepositStatus } from "./types";
 
-const nftDepositStatusVariantMap: Record<NftDepositStatus, "success" | "danger"> = {
-  "Đã gửi": "success",
-  "Đã rút": "danger",
+
+import { shortAddress } from "@/utils";
+import { nftStatusLabelMap, nftStatusVariantMap, UserNft } from "@/model/User";
+
+
+type NftTableProps = {
+  data: UserNft[];
 };
 
-type NftDepositTableProps = {
-  deposits: NftDeposit[];
-};
-
-export function NftDepositTable({ deposits }: NftDepositTableProps) {
+export function UserNftTable({ data: nfts }: NftTableProps) {
   const {
     sorting,
     setSorting,
@@ -42,40 +40,42 @@ export function NftDepositTable({ deposits }: NftDepositTableProps) {
     clearFilters,
   } = useDataTableState();
 
-  const columns = React.useMemo<ColumnDef<NftDeposit>[]>(
+  const columns = React.useMemo<ColumnDef<UserNft>[]>(
     () => [
       {
         accessorKey: "id",
-        header: sortableHeader<NftDeposit>("ID"),
+        header: sortableHeader<UserNft>("ID"),
       },
       {
         accessorKey: "nftAddress",
-        header: sortableHeader<NftDeposit>("NFT address"),
+        header: sortableHeader<UserNft>("NFT address"),
         cell: ({ row }) => (
           <span className="font-mono text-foreground">{shortAddress(row.original.nftAddress)}</span>
         ),
       },
       {
         accessorKey: "tokenId",
-        header: sortableHeader<NftDeposit>("Token ID"),
+        header: sortableHeader<UserNft>("Token ID"),
         cell: ({ row }) => (
           <span className="font-mono text-foreground">{row.original.tokenId}</span>
         ),
       },
       {
         accessorKey: "name",
-        header: sortableHeader<NftDeposit>("Tên NFT"),
+        header: sortableHeader<UserNft>("Tên NFT"),
       },
       {
         accessorKey: "depositedAt",
-        header: sortableHeader<NftDeposit>("Thời gian deposit"),
+        header: sortableHeader<UserNft>("Thời gian deposit"),
       },
       {
         accessorKey: "status",
-        header: sortableHeader<NftDeposit>("Trạng thái"),
+        header: sortableHeader<UserNft>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.status;
-          return <Badge variant={nftDepositStatusVariantMap[status]}>{status}</Badge>;
+          return <Badge variant={nftStatusVariantMap[status]}>{
+            nftStatusLabelMap[status]
+          }</Badge>;
         },
       },
     ],
@@ -83,7 +83,7 @@ export function NftDepositTable({ deposits }: NftDepositTableProps) {
   );
 
   const table = useReactTable({
-    data: deposits,
+    data: nfts,
     columns,
     state: {
       sorting,

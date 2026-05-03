@@ -4,15 +4,15 @@ import { useAccount } from "wagmi";
 import { formatUnits } from "viem";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { shortAddress } from "@/components/shared/data-table";
+import { DetailCard } from "@/components/shared/DetailCard";
 import { useUserBalance } from "@/hooks/use-user-asset";
-import { UserRepaymentLoanResponse } from "@/service/modules/repayment";
+import { UserLoanResponse } from "@/service/modules/loan";
+import { shortAddress } from "@/utils";
 
 type EndLoanDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  loan: UserRepaymentLoanResponse | null;
+  loan: UserLoanResponse | null;
   onConfirm: () => Promise<void> | void;
   isSubmitting?: boolean;
   txStatus?: "idle" | "success" | "error" | null;
@@ -49,41 +49,49 @@ export function EndLoanDialog({
 
         <div className="space-y-6">
           <section className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Người cho vay</Label>
-              <p className="mt-2 font-mono text-sm text-foreground">{shortAddress(loan.lender)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Khoản vay từ {loan.timeCreated}</p>
-            </div>
+            <DetailCard
+              label="Người cho vay"
+              value={shortAddress(loan.lender)}
+              valueClassName="font-mono text-sm"
+              helperText={`Khoản vay từ ${loan.timeCreated}`}
+            />
 
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Số tiền vay</Label>
-              <p className="mt-2 text-lg font-semibold text-foreground">{formatUnits(loan.loanAmount, 6)} USDC</p>
-              <p className="mt-1 text-xs text-muted-foreground">Tổng phải trả: {formatUnits(loan.totalAmountHaveToPay, 6)} USDC</p>
-            </div>
+            <DetailCard
+              label="Số tiền vay"
+              value={`${formatUnits(loan.loanAmount, 6)} USDC`}
+              valueClassName="text-lg font-semibold"
+              helperText={`Tổng phải trả: ${formatUnits(loan.totalAmountHaveToPay, 6)} USDC`}
+            />
 
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Đã thanh toán</Label>
-              <p className="mt-2 text-lg font-semibold text-emerald-400">{formatUnits(loan.amountPaid, 6)} USDC</p>
-            </div>
+            <DetailCard
+              label="Đã thanh toán"
+              value={`${formatUnits(loan.amountPaid, 6)} USDC`}
+              valueClassName="text-lg font-semibold text-emerald-400"
+            />
 
-            <div className="rounded-xl border border-border bg-sidebar/80 p-4">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dư nợ còn lại</Label>
-              <p className="mt-2 text-lg font-semibold text-amber-300">{formatUnits(amountRemainingUnits, 6)} USDC</p>
-            </div>
+            <DetailCard
+              label="Dư nợ còn lại"
+              value={`${formatUnits(amountRemainingUnits, 6)} USDC`}
+              valueClassName="text-lg font-semibold text-amber-300"
+            />
           </section>
 
-          <section className="rounded-xl border border-border bg-sidebar/80 p-4">
-            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Số tiền thanh toán khi kết thúc</Label>
-            <p className="mt-2 text-lg font-semibold text-foreground">{formatUnits(amountRemainingUnits, 6)} USDC</p>
+          <section>
+            <DetailCard
+              label="Số tiền thanh toán khi kết thúc"
+              value={`${formatUnits(amountRemainingUnits, 6)} USDC`}
+              valueClassName="text-lg font-semibold"
+            />
           </section>
 
-          <section className="rounded-xl border border-border bg-sidebar/80 p-4">
-            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Số dư USDC của bạn</Label>
-            <p className="mt-2 text-lg font-semibold text-foreground">{formatUnits(userBalanceUnits, 6)} USDC</p>
-            <p className="mt-1 text-sm text-foreground">
-              Còn lại sau khi trả: {formatUnits(remainingBalanceAfterPaymentUnits, 6)} USDC
-            </p>
-            
+          <section>
+            <DetailCard
+              label="Số dư USDC của bạn"
+              value={`${formatUnits(userBalanceUnits, 6)} USDC`}
+              valueClassName="text-lg font-semibold"
+              helperText={`Còn lại sau khi trả: ${formatUnits(remainingBalanceAfterPaymentUnits, 6)} USDC`}
+              helperClassName="text-sm"
+            />
           </section>
 
           {txStatus === "error" && txMessage && (

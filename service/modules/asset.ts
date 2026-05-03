@@ -1,37 +1,9 @@
-import { mockNfts } from "@/view/Asset/mock-data";
+
+import { UseGetUserNftsOptions } from "@/hooks/use-user-asset";
 import { Page, request } from "../api";
+import { mockBalance, mockNftsResponse, UserBalanceResponse, UserNftResponse } from "@/model/User";
 
-export interface UserBalanceResponse {
-  userAddress : string;
-  usdcBalance: bigint;
-  ethBalance: bigint;
-} 
-
-export interface UserNftResponse {
-  userAddress: string;
-  id  : number;
-  nftId: bigint;
-  user : string;
-  nftAddress: string;
-  tokenId : bigint;
-  timeCreated: string;
-  createdAt: string;
-  isWithdrawn?: boolean;
-  withdrawnAt?: string;
-  // Optional fields for enriched NFT data
-  nftName?: string;
-  nftDescription?: string;
-  nftCollectionName?: string;
-  nftImageUrl?: string;
-}
-
-const mockBalance: UserBalanceResponse = {
-  userAddress: "0x1234...abcd",
-  usdcBalance: BigInt("1000000000"), // 1000 USDC with 6 decimals
-  ethBalance: BigInt("50000000000000000"), // 0.05 ETH with 18 decimals
-};
-
-
+// Get the balance of a user by their wallet address
 export async function getUserBalance(address: string) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
   if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
@@ -47,20 +19,39 @@ export async function getUserBalance(address: string) {
   return data;
 }
 
-export async function getUserNfts(address: string) {
+
+// Get the NFTs owned by a user by their wallet address
+export async function getUserNfts(options: UseGetUserNftsOptions) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
   if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
-    console.log("Returning mock NFTs for user:", address);
-    return mockNfts;
+    console.log("Returning mock NFTs for user:", options.filter.user);
+    return mockNftsResponse;
   }
   const data = await request<Page<UserNftResponse>>({
     path: "/api/v1/user-assets/nfts",
     query: {
-      user: address,
+        ...options.filter,
+        page: options.page ?? 0,
+        size: options.size ?? 10,
+        sort: options.sort ?? "createdAt,DESC",
     },
     method: "GET",
   });
   
+  return data;
+}
+
+export async function getUserNftsById(nftId: bigint) {
+  console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
+  if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+    console.log("Returning mock NFT for ID:", nftId);
+    return mockNftsResponse.content.find(nft => nft.nftId === nftId);
+  }
+  const data = await request<UserNftResponse>({
+    path: `/api/v1/user-assets/nfts/${nftId}`,
+    method: "GET",
+  });
+
   return data;
 }
 
