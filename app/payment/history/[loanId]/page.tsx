@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+"use client";
+import { Suspense, use } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,50 +7,27 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DetailCard } from "@/components/shared/DetailCard";
 import { PaymentHistoryTable } from "@/view/Repayment/PaymentHistoryTable";
-import {
-  getLoanPaymentHistory,
-  getLoans,
-} from "@/service/modules/loan";
-import {
-  loanStatusLabelMap,
-  loanStatusVariantMap,
-} from "@/view/Repayment/types";
+
 import { formatUnits } from "viem";
 import BackButton from "@/components/shared/BackButton";
+import { useLoanPayTransactions } from "@/hooks/use-get-loan-pay-transaction";
+import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
+import { UserLoanStatusVariantMap, UserLoanStatusLabelMap } from "@/model/Loan";
+import { useGetLoanById2, useGetLoans, useGetLoans2 } from "@/hooks/use-get-loans";
+import { formatDate, formatUsdc, shortAddress } from "@/utils";
+import { FullScreenError } from "@/components/shared/FullScreenError";
+import { useParams, useRouter } from "next/navigation";
 
-function truncateAddress(address: string, startChars = 6, endChars = 4) {
-  if (address.length <= startChars + endChars) return address;
-  return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
-}
 
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-interface PageProps {
-  params: Promise<{
-    loanId: string;
-  }>;
-}
-
-async function PaymentHistoryContent({ params }: PageProps) {
-  const { loanId } = await params;
-  const loanIdBigInt = BigInt(loanId);
+export default function PaymentHistoryContent() {
+  const params = useParams<{ loanId: string }>();
+  const loanIdBigInt = BigInt(params.loanId);
 
   // Fetch payment history
-  const historyData = await getLoanPaymentHistory(loanIdBigInt);
-  const history = historyData.content || [];
-
-  // Fetch all loans to find the matching loan details
-  const loansData = await getLoans({
-    filter: {},
+  const {data: loanPayHistoryData, isLoading: loanPayHistoryIsLoading} = useLoanPayTransactions({
+    filter: {
+      loanId: loanIdBigInt,
+    },
     pageable: {
       page: 0,
       size: 100,
@@ -57,30 +35,17 @@ async function PaymentHistoryContent({ params }: PageProps) {
     },
   });
 
-  const loan = loansData.content.find((l) => l.loanId === loanIdBigInt);
+  // Fetch loan details
+  const { data: loansData, isLoading: loansIsLoading } = useGetLoanById2(loanIdBigInt);
+  const loan = loansData;
 
-  if (!loan) {
-    return (
-      <div className="space-y-6 pb-8">
-        <div className="flex items-center gap-2 mb-6">
-          <BackButton title="Quay lại " destination="/payment" />
-        </div>
-
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-lg">Không tìm thấy thông tin khoản vay</p>
-        </div>
-      </div>
-    );
+  if (loanPayHistoryIsLoading || loansIsLoading) {
+    return <FullScreenLoading message="Đang tải lịch sử thanh toán..." />;
   }
 
-  const formattedLoan = {
-    loanAmount: formatUnits(loan.loanAmount, 6),
-    totalAmountHaveToPay: formatUnits(loan.totalAmountHaveToPay, 6),
-    amountPaid: formatUnits(loan.amountPaid, 6),
-  };
-
-  const amountRemaining =
-    BigInt(loan.totalAmountHaveToPay) - BigInt(loan.amountPaid);
+  if (!loan || !loanPayHistoryData) {
+    return <FullScreenError message="Không tìm thấy khoản vay hoặc lịch sử thanh toán." />;
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -97,12 +62,12 @@ async function PaymentHistoryContent({ params }: PageProps) {
               Lịch sử thanh toán
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Khoản vay: {truncateAddress(loan.borrower)} →{" "}
-              {truncateAddress(loan.lender)}
+              Khoản vay: {shortAddress(loan.borrower)} →{" "}
+              {shortAddress(loan.lender)}
             </p>
           </div>
-          <Badge variant={loanStatusVariantMap[loan.loanStatus]}>
-            {loanStatusLabelMap[loan.loanStatus]}
+          <Badge variant={UserLoanStatusVariantMap[loan.loanStatus]}>
+            {UserLoanStatusLabelMap[loan.loanStatus]}
           </Badge>
         </div>
 
@@ -110,28 +75,28 @@ async function PaymentHistoryContent({ params }: PageProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <DetailCard
             label="Số tiền vay"
-            value={`${formattedLoan.loanAmount} USDC`}
+            value={`${formatUsdc(loan.loanAmount) } USDC`}
             className="detail-card-bg"
             valueClassName="text-lg font-semibold"
           />
 
           <DetailCard
             label="Tổng phải trả"
-            value={`${formattedLoan.totalAmountHaveToPay} USDC`}
+            value={`${formatUsdc(loan.totalAmountHaveToPay)} USDC`}
             className="detail-card-bg"
             valueClassName="text-lg font-semibold"
           />
 
           <DetailCard
             label="Đã thanh toán"
-            value={`${formattedLoan.amountPaid} USDC`}
+            value={`${formatUsdc(loan.amountPaid)} USDC`}
             className="detail-card-bg"
             valueClassName="text-lg font-semibold text-emerald-500"
           />
 
           <DetailCard
             label="Còn lại"
-            value={`${formatUnits(amountRemaining, 6)} USDC`}
+            value={`${formatUsdc(loan.totalAmountHaveToPay - loan.amountPaid)} USDC`}
             className="detail-card-bg"
             valueClassName="text-lg font-semibold text-orange-500"
           />
@@ -162,7 +127,7 @@ async function PaymentHistoryContent({ params }: PageProps) {
 
       {/* Payment History Table */}
       {history.length > 0 ? (
-        <PaymentHistoryTable history={history} />
+        <PaymentHistoryTable history={loanPayHistoryData} />
       ) : (
         <Card className="bg-sidebar p-8 border-border text-center">
           <p className="text-muted-foreground">
@@ -174,10 +139,3 @@ async function PaymentHistoryContent({ params }: PageProps) {
   );
 }
 
-export default function PaymentHistoryPage(props: PageProps) {
-  return (
-    <Suspense fallback={<div className="text-center py-8">Đang tải...</div>}>
-      <PaymentHistoryContent params={props.params} />
-    </Suspense>
-  );
-}

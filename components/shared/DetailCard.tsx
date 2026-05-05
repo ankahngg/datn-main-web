@@ -20,7 +20,7 @@ export function DetailCard({
   helperClassName = "",
 }: DetailCardProps) {
   return (
-    <div className={cn("rounded-xl border border-border bg-sidebar/80 p-4 shadow-sm", className)}>
+    <div className={cn("rounded-xl border border-border bg-sidebar/80 p-4 shadow-sm detail-card-bg", className)}>
       <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </Label>

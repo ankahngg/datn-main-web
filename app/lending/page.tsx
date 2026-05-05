@@ -6,14 +6,14 @@ import { HandCoins, Wallet } from "lucide-react";
 import WalletRequired from "@/components/wallet-required";
 import PageHeader from "@/components/shared/PageHeader";
 
-import { LendingTable } from "@/view/Lending/LendingTable";
+import { LenderLoanTable } from "@/view/Lending/LenderLoanTable";
 import {
   LendingDetailsDialog,
   LendingHistoryDialog,
 } from "@/view/Lending/LendingActionDialogs";
 
 import { Button } from "@/components/ui/button";
-import { useGetLoans } from "@/hooks/use-get-loans";
+import { useGetLoans, useGetLoans2 } from "@/hooks/use-get-loans";
 import { UserLoan } from "@/model/Loan";
 
 export default function LendingPage() {
@@ -23,18 +23,17 @@ export default function LendingPage() {
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<UserLoan | null>(null);
 
-  const { data: lendingLoans, isLoading: isLoadingLoans } = useGetLoans({
-    filter: { user2: address },
+  const { data: lendingLoans, isLoading: isLoadingLoans } = useGetLoans2({
+    filter: { lender: address },
     page: 0,
     size: 1000,
     sort: "timeCreated,DESC",
   });
 
-  const loans = lendingLoans?.content ?? [];
+  const loans = lendingLoans ?? [];
 
   const handleTableAction = (action: string, loan: UserLoan) => {
-    const selected = lendingLoans?.content.find((item) => item.id === loan.id) ?? null;
-    setSelectedLoan(selected);
+    setSelectedLoan(loan);
 
     switch (action) {
       case "VIEW_DETAILS":
@@ -67,7 +66,7 @@ export default function LendingPage() {
           Cho vay
         </Button>
 
-          <LendingTable
+          <LenderLoanTable
             loans={loans}
             isLoading={isLoadingLoans}
             onAction={handleTableAction}

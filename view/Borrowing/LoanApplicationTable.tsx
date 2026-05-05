@@ -69,7 +69,7 @@ export function LoanApplicationTable({
   const columns = React.useMemo<ColumnDef<LoanApplication>[]>(
     () => [
       {
-        accessorKey: "id",
+        accessorKey: "applicationId",
         header: sortableHeader<LoanApplication>("ID"),
       },
       {
@@ -82,25 +82,18 @@ export function LoanApplicationTable({
         ),
       },
       {
-        accessorKey: "collateralAsset",
+        accessorKey: "collateralType",
         header: sortableHeader<LoanApplication>("Tài sản thế chấp"),
       },
       {
-        id: "assetName",
-        header: sortableHeader<LoanApplication>("Tên tài sản"),
-        cell: ({ row }) => {
-          const { collateralAsset, nftName } = row.original;
-          if (collateralAsset === "NFT") {
-            return <span className="text-foreground">{nftName || "Tài sản số"}</span>;
-          }
-          return <span className="text-foreground">{collateralAsset === "ETHER" ? "Etherium" : collateralAsset}</span>;
-        },
+        accessorKey: "assetName",
+        header: sortableHeader<LoanApplication>("Tên tài sản")
       },
       {
         accessorKey: "collateralAmount",
         header: sortableHeader<LoanApplication>("Số lượng thế chấp"),
         cell: ({ row }) => {
-          const collateralAsset = row.original.collateralAsset;
+          const collateralAsset = row.original.collateralType;
           if (collateralAsset === "NFT") 
             return row.original.collateralAmount;
           if (collateralAsset === "ETHER")

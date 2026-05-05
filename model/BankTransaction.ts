@@ -23,10 +23,14 @@ export interface BankTransactionResponse extends TransactionEventBaseResponse {
 
 export interface BankTransactionFilter {
   user?: string;
-  fromTime?: number; // epoch millis
-  toTime?: number;   // epoch millis
-  assetTypes?: BankAsset[];
-  actions?: BankAction[];
+  fromTimeCreated?: string; // local date-time string
+  toTimeCreated?: string;   // local date-time string
+  bankAsset?: BankAsset;
+  bankAction?: BankAction;
+  status?: TransactionStatus;
+  amount ? : bigint;
+  nftAddress ? : string;
+  tokenId ? : string;
 }
 
 export const bankActionLabelMap: Record<BankAction, string> = {

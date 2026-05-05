@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import "@rainbow-me/rainbowkit/styles.css";
-import Leftbar from "@/MyComponent/sidebar";
+import Leftbar from "@/components/shared/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import Header from "@/MyComponent/header";
+import Header from "@/components/shared/header";
 import { Providers } from "@/provider/Providers";
 import { cn } from "@/utils";
 

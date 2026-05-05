@@ -24,8 +24,6 @@ export async function getBankTransactions({
     method: "GET",
     query: {
       ...filter,
-      assetTypes  : filter.assetTypes?.join(","),
-      actions     : filter.actions?.join(","),
       page: pageable?.page ?? 0,
       size: pageable?.size ?? 10,
       sort: pageable?.sort ?? "createdAt,DESC",

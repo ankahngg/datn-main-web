@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DetailCard } from "@/components/shared/DetailCard";
 import { useUserBalance } from "@/hooks/use-user-asset";
-import { UserLoanResponse } from "@/service/modules/loan";
+
 import { shortAddress } from "@/utils";
+import { UserLoanResponse } from "@/model/Loan";
 
 type EndLoanDialogProps = {
   open: boolean;

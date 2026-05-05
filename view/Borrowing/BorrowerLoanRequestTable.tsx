@@ -28,31 +28,35 @@ import {
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
-import { applicationStatusVariantMap, applicationStatusLabelMap } from "@/model/LoanApplication";
+import {
+  applicationStatusVariantMap,
+  applicationStatusLabelMap,
+  LoanApplication,
+} from "@/model/LoanApplication";
 import { LoanOffer } from "@/model/LoanOffer";
-import { formatUsdc } from "@/utils";
-
-
+import { formatUsdc, isNotProcessing } from "@/utils";
+import { useAccount } from "wagmi";
 
 type BorrowerLoanRequestTableProps = {
   requests: LoanOffer[];
+  application: LoanApplication;
   title?: string;
   emptyText?: string;
-  onCancelRequest: (offerId: bigint) => void;
-  onAcceptRequest?: (offerId: bigint) => void;
-  canAcceptRequest?: (offer: LoanOffer) => boolean;
+  onCancelRequest: (index: number, offerType: string) => void;
+  onAcceptRequest: (index: number, offerType: string) => void;
   hilightRowId?: string;
 };
 
 export function BorrowerLoanRequestTable({
   requests,
+  application,
   title,
   emptyText,
   onCancelRequest,
   onAcceptRequest,
-  canAcceptRequest,
   hilightRowId,
 }: BorrowerLoanRequestTableProps) {
+    const { address } = useAccount();
   const {
     sorting,
     setSorting,
@@ -72,9 +76,9 @@ export function BorrowerLoanRequestTable({
       {
         accessorKey: "loanAmount",
         header: sortableHeader<LoanOffer>("Số tiền vay"),
-        cell: ({ row }) => {           
+        cell: ({ row }) => {
           return formatUsdc(row.original.loanAmount);
-        }
+        },
       },
       {
         accessorKey: "interestRate",
@@ -105,23 +109,33 @@ export function BorrowerLoanRequestTable({
         header: () => <span className="text-foreground">Thao tác</span>,
         cell: ({ row }) => {
           const offer = row.original;
-          const isAcceptable = canAcceptRequest ? canAcceptRequest(offer) : true;
-          const isCancelable = offer.status === "CREATED";
-
+          // Chỉ cho phép hủy nếu offer đang ở trạng thái CREATED và người dùng hiện tại là người tạo offer đó
+          const isCancelable = isNotProcessing(application.status) && offer.status === "CREATED" && offer.requester.toLowerCase() === address?.toLowerCase();
+          // Chỉ cho phép chấp nhận nếu offer đang ở trạng thái CREATED và người dùng hiện tại là khong phải người tạo đơn vay
+          const isAcceptable = isNotProcessing(application.status) && offer.status === "CREATED" && address?.toLowerCase() != application.borrower.toLowerCase();
+          
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                <Button
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                >
                   <MoreHorizontal className="size-4" />
                   <span className="sr-only">Mo menu thao tac</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-sidebar border border-border text-foreground">
-                <DropdownMenuLabel className="text-foreground">Hành động</DropdownMenuLabel>
+              <DropdownMenuContent
+                align="end"
+                className="w-48 bg-sidebar border border-border text-foreground"
+              >
+                <DropdownMenuLabel className="text-foreground">
+                  Hành động
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {onAcceptRequest && (
                   <DropdownMenuItem
-                    onClick={() => onAcceptRequest(offer.offerId)}
+                    onClick={() => onAcceptRequest(row.index, "borrower")}
                     disabled={!isAcceptable}
                     className="cursor-pointer"
                   >
@@ -130,7 +144,7 @@ export function BorrowerLoanRequestTable({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
-                  onClick={() => onCancelRequest(offer.offerId)}
+                  onClick={() => onCancelRequest(row.index, "borrower")}
                   variant="destructive"
                   disabled={!isCancelable}
                   className="cursor-pointer"
@@ -144,7 +158,7 @@ export function BorrowerLoanRequestTable({
         },
       },
     ],
-    [canAcceptRequest, onAcceptRequest, onCancelRequest],
+    [onAcceptRequest, onCancelRequest],
   );
 
   const table = useReactTable({
@@ -195,6 +209,11 @@ export function BorrowerLoanRequestTable({
               label: applicationStatusLabelMap.PENDING_CANCELED,
             },
             { value: "CANCELED", label: applicationStatusLabelMap.CANCELED },
+            {
+              value: "PENDING_ACCEPTED",
+              label: applicationStatusLabelMap.PENDING_ACCEPTED,
+            },
+            { value: "ACCEPTED", label: applicationStatusLabelMap.ACCEPTED },
           ],
         }}
         onClearFilters={() => {

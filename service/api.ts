@@ -5,7 +5,7 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export interface RequestOptions<TBody = unknown> {
   path: string;
   method?: HttpMethod;
-  query?: Record<string, string | number | boolean | undefined>;
+  query?: Record<string, string | number | boolean | undefined | bigint>;
   body?: TBody;
   signal?: AbortSignal;
   headers?: Record<string, string>;

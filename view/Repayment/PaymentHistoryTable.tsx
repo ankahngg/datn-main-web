@@ -19,72 +19,29 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import { payActionLabelMap, payActionVariantMap } from "./types";
-import type { LoanPayTransactionResponse } from "@/service/modules/loan";
 
-function formatAmount(value: bigint | number | string) {
-  const numericValue = typeof value === "bigint" ? Number(value) / 1e6 : Number(value);
-  if (Number.isNaN(numericValue)) {
-    return String(value);
-  }
-
-  return new Intl.NumberFormat("vi-VN", {
-    maximumFractionDigits: 6,
-  }).format(numericValue);
-}
-
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function truncateAddress(address: string, startChars = 6, endChars = 4) {
-  if (address.length <= startChars + endChars) return address;
-  return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
-}
+import { LoanPayTransaction } from "@/model/LoanPayTransaction";
+import { formatDate, formatUsdc, shortAddress } from "@/utils";
+import { transactionStatusVariantMap, transactionStatusLabelMap } from "@/model/BankTransaction";
+import { UserLoanStatusVariantMap, UserLoanStatusLabelMap, payActionLabelMap, payActionVariantMap } from "@/model/Loan";
 
 type PaymentHistoryTableProps = {
-  history: LoanPayTransactionResponse[];
+  history: LoanPayTransaction[];
 };
 
 export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
-  const { sorting, setSorting, columnFilters, setColumnFilters, globalFilter, setGlobalFilter, clearFilters: clearTableFilters } = useDataTableState();
-  const [actionFilter, setActionFilter] = React.useState<LoanPayTransactionResponse["action"] | "all">("all");
+  const { sorting, setSorting, columnFilters, setColumnFilters, globalFilter, setGlobalFilter, clearFilters} = useDataTableState();
+  
 
-  const actionOptions = React.useMemo(
-    () => Array.from(new Set(history.map((tx) => tx.action))),
-    [history]
-  );
-
-  const filteredHistory = React.useMemo(
-    () =>
-      history.filter((tx) => {
-        const matchesAction = actionFilter === "all" || tx.action === actionFilter;
-        return matchesAction;
-      }),
-    [history, actionFilter]
-  );
-
-  const clearFilters = React.useCallback(() => {
-    clearTableFilters();
-    setActionFilter("all");
-  }, [clearTableFilters]);
-
-  const columns = React.useMemo<ColumnDef<LoanPayTransactionResponse>[]>(
+  const columns = React.useMemo<ColumnDef<LoanPayTransaction>[]>(
     () => [
       {
         accessorKey: "id",
-        header: sortableHeader<LoanPayTransactionResponse>("ID"),
+        header: sortableHeader<LoanPayTransaction>("ID"),
       },
       {
         accessorKey: "action",
-        header: sortableHeader<LoanPayTransactionResponse>("Hành động"),
+        header: sortableHeader<LoanPayTransaction>("Hành động"),
         cell: ({ row }) => {
           const action = row.original.action;
           return <Badge variant={payActionVariantMap[action]}>{payActionLabelMap[action]}</Badge>;
@@ -92,43 +49,58 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
       },
       {
         accessorKey: "amount",
-        header: sortableHeader<LoanPayTransactionResponse>("Số tiền"),
+        header: sortableHeader<LoanPayTransaction>("Số tiền"),
         cell: ({ row }) => {
           const amount = row.original.amount;
-          return <span>{formatAmount(amount)} USDC</span>;
+          return <span>{formatUsdc(amount)} USDC</span>;
         },
       },
       {
         accessorKey: "amountPaid",
-        header: sortableHeader<LoanPayTransactionResponse>("Đã thanh toán"),
+        header: sortableHeader<LoanPayTransaction>("Đã thanh toán"),
         cell: ({ row }) => {
           const amountPaid = row.original.amountPaid;
-          return <span>{formatAmount(amountPaid)} USDC</span>;
+          return <span>{formatUsdc(amountPaid)} USDC</span>;
         },
       },
       {
-        accessorKey: "totalAmountHaveToPay",
-        header: sortableHeader<LoanPayTransactionResponse>("Tổng phải trả"),
+        accessorKey: "remainingAmount",
+        header: sortableHeader<LoanPayTransaction>("Còn lại"),
         cell: ({ row }) => {
-          const total = row.original.totalAmountHaveToPay;
-          return <span>{formatAmount(total)} USDC</span>;
+          const total = row.original.remainingAmount;
+          return <span>{formatUsdc(total)} USDC</span>;
         },
       },
+      
       {
         accessorKey: "txHash",
-        header: sortableHeader<LoanPayTransactionResponse>("TX Hash"),
+        header: sortableHeader<LoanPayTransaction>("TX Hash"),
         cell: ({ row }) => {
           const txHash = row.original.txHash;
           return (
             <span className="font-mono text-xs text-muted-foreground">
-              {truncateAddress(txHash, 6, 4)}
+              {
+                shortAddress(txHash)
+              }
             </span>
           );
         },
       },
       {
+        accessorKey: "status",
+        header: sortableHeader<LoanPayTransaction>("Trạng thái"),
+        cell: ({ row }) => {
+          const status = row.original.status;
+          return (
+            <Badge variant={transactionStatusVariantMap[status]}>
+              {transactionStatusLabelMap[status]}
+            </Badge>
+          );
+        },
+      },
+      {
         accessorKey: "timeCreated",
-        header: sortableHeader<LoanPayTransactionResponse>("Thời gian"),
+        header: sortableHeader<LoanPayTransaction>("Thời gian"),
         cell: ({ row }) => {
           const time = row.original.timeCreated;
           return <span className="text-sm text-foreground">{formatDate(time)}</span>;
@@ -139,7 +111,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
   );
 
   const table = useReactTable({
-    data: filteredHistory,
+    data: history,
     columns,
     state: {
       sorting,
@@ -167,23 +139,22 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
         searchValue={globalFilter}
         onSearchChange={setGlobalFilter}
         searchPlaceholder="Tìm theo ID, TX Hash, thời gian..."
-        onClearFilters={clearFilters}
-        statusFilter={
-          actionOptions.length > 0
-            ? {
-                value: actionFilter as string,
-                placeholder: "Tất cả hành động",
-                options: [
-                  { value: "all", label: "Tất cả hành động" },
-                  ...actionOptions.map((action) => ({
-                    value: action,
-                    label: payActionLabelMap[action],
-                  })),
-                ],
-                onChange: (value) => setActionFilter(value as LoanPayTransactionResponse["action"] | "all"),
-              }
-            : undefined
+        statusFilter={{
+          value: (table.getColumn("loanStatus")?.getFilterValue() as string) ?? "all",
+          onChange: (value) =>
+            table.getColumn("loanStatus")?.setFilterValue(value === "all" ? undefined : value),
+
+          options: [
+            { value: "all", label: "Tất cả giao dịch" },
+            { value: "PAY", label: "Trả vay" },
+            { value: "END", label: "Hoàn tất vay" },
+          ]
         }
+        }
+        onClearFilters={() => {
+          clearFilters();
+          table.setPageIndex(0);
+        }}
       />
       <DataTableContent
         table={table}

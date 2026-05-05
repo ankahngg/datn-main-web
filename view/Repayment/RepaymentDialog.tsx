@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { DetailCard } from "@/components/shared/DetailCard";
 import { useUserBalance } from "@/hooks/use-user-asset";
-import { UserLoanResponse } from "@/service/modules/loan";
-import { formatUsdc, shortAddress } from "@/utils";
+import { formatUsdc } from "@/utils";
+import { UserLoanResponse } from "@/model/Loan";
+import BeforeAfterCard from "@/components/shared/BeforeAfterCard";
 
 const repaymentSchema = z.object({
   amount: z
@@ -119,10 +120,11 @@ export function RepaymentDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          <section className="grid gap-4 sm:grid-cols-2">
+          <section className="grid gap-4 sm:grid-cols-3">
             <DetailCard
+              className="col-span-3"
               label="Người cho vay"
-              value={shortAddress(loan.lender)}
+              value={loan.lender}
               valueClassName="font-mono"
               helperText={`Khoản vay từ ${loan.timeCreated}`}
             />
@@ -144,7 +146,7 @@ export function RepaymentDialog({
             />
           </section>
 
-          <section>
+          {/* <section>
             <DetailCard
               label="Số dư USDC của bạn"
               value={`${formatUsdc(userBalanceUnits)} USDC`}
@@ -156,7 +158,7 @@ export function RepaymentDialog({
               }
               helperClassName="text-sm"
             />
-          </section>
+          </section> */}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -179,6 +181,20 @@ export function RepaymentDialog({
                   </FormItem>
                 )}
               />
+
+            <BeforeAfterCard 
+                beforeLabel="Số dư hiện tại"
+                beforeValue={formatUsdc(userBalanceUnits)}
+                changeLabel="Số tiền trả vay"
+                changeValue={watchAmount ? `${normalizedWatchAmount}` : ""}
+                afterLabel="Số dư sau khi trả vay"
+                afterValue={balanceAfterRepayment !== null ? `${formatUsdc(balanceAfterRepayment)}` : ""}
+                currency="USDC"
+                type="decrease"
+                afterLabel2="Dư nợ còn lại"
+                afterValue2={watchAmount ? `${formatUsdc(amountRemainingUnits - parseUnits(normalizedWatchAmount, 6))}` : ""} 
+              />
+
 
               {/* <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {quickAmounts.map((item) => (
@@ -208,7 +224,7 @@ export function RepaymentDialog({
               )}
 
               <DialogFooter className="pt-2  bg-background text-foreground ">
-                <Button type="submit" disabled={isSubmitting || !watchAmount}>
+                <Button type="submit" disabled={isSubmitting || !watchAmount} className="my-btn">
                   {isSubmitting ? "Đang xử lý..." : "Trả vay"}
                 </Button>
               </DialogFooter>

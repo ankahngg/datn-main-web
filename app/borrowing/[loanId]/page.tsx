@@ -14,7 +14,7 @@ import { LenderLoanRequestTable } from "@/view/Borrowing/LenderLoanRequestTable"
 import { Badge } from "@/components/ui/badge";
 
 import { formatEther, formatUnits, parseUnits } from "viem";
-import { FullScreenLoading } from "@/MyComponent/FullLoadingScreen";
+import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
 import { contractAddress } from "@/config/app.config";
 import abiData from "@/abi.json";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -29,60 +29,74 @@ import {
 import { LoanOffer, LoanOfferSubmitValues } from "@/model/LoanOffer";
 import {
   useLoanOffersByApplicationId,
+  useLoanOffersByApplicationId2,
   useUserLoanApplicationById,
-} from "@/hooks/use-user-loan";
-import { FullScreenError } from "@/MyComponent/FullScreenError";
-import { useUserBalance, useUserNFTById } from "@/hooks/use-user-asset";
+  useUserLoanApplicationById2,
+} from "@/hooks/use-get-loan-application";
+import { FullScreenError } from "@/components/shared/FullScreenError";
+import { useUserBalance, useUserNFTById, useUserNFTById2 } from "@/hooks/use-user-asset";
 import { UserNft } from "@/model/User";
+import { CancelOfferDialog } from "@/view/Borrowing/CancelOfferDialog";
+import { AcceptOfferDialog } from "@/view/Borrowing/AcceptOfferDialog";
 
 export default function LoanOffersPage() {
   const router = useRouter();
   const params = useParams<{ loanId: string }>();
+  console.log("LoanOffersPage params:", params);
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
 
   const loanApplicationId = BigInt(params.loanId);
 
+  // State for creating offer
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(
     null,
   );
   const [txMessage, setTxMessage] = useState<string | null>(null);
 
+  // State for canceling offer
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [selectedCancelOfferId, setSelectedCancelOfferId] = useState<
-    bigint | null
-  >(null);
+  const [selectedCancelOffer, setSelectedCancelOffer] =
+    useState<LoanOffer | null>(null);
   const [isCancelSubmitting, setIsCancelSubmitting] = useState(false);
   const [cancelTxStatus, setCancelTxStatus] = useState<
     "idle" | "success" | "error" | null
   >(null);
   const [cancelTxMessage, setCancelTxMessage] = useState<string | null>(null);
+
+  // State for accepting offer
   const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
-  const [selectedAcceptOfferId, setSelectedAcceptOfferId] = useState<
-    bigint | null
-  >(null);
+  const [selectedAcceptOffer, setSelectedAcceptOffer] =
+    useState<LoanOffer | null>(null);
   const [isAcceptSubmitting, setIsAcceptSubmitting] = useState(false);
   const [acceptTxStatus, setAcceptTxStatus] = useState<
     "idle" | "success" | "error" | null
   >(null);
   const [acceptTxMessage, setAcceptTxMessage] = useState<string | null>(null);
 
+  // Data fetching
   const { data: userLoanApplication, isLoading: isLoadingLoanApplication } =
-    useUserLoanApplicationById(loanApplicationId);
+    useUserLoanApplicationById2(loanApplicationId);
   const { data: userLoanOffers, isLoading: isLoadingLoanOffers } =
-    useLoanOffersByApplicationId(loanApplicationId);
-  const { data: userNft, isLoading: isLoadingUserNft } = useUserNFTById(
+    useLoanOffersByApplicationId2(loanApplicationId);
+  const { data: userNft, isLoading: isLoadingUserNft } = useUserNFTById2(
     userLoanApplication?.nftId,
   );
-  const { data: userBalance, isLoading : userBalanceIsLoading } = useUserBalance(address);
+  const { data: userBalance, isLoading: userBalanceIsLoading } =
+    useUserBalance(address);
 
-  if (isLoadingLoanApplication || isLoadingLoanOffers || isLoadingUserNft || userBalanceIsLoading)
+  if (
+    isLoadingLoanApplication ||
+    isLoadingLoanOffers ||
+    isLoadingUserNft ||
+    userBalanceIsLoading
+  )
     return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
   if (!userLoanApplication || !userLoanOffers || !userBalance) {
     return (
       <FullScreenError
-        message={`Có lỗi xảy ra khi tải dữ liệu cho đơn vay với ID ${params.loanId}. Vui lòng thử lại sau.`}
+        message={`Có lỗi xảy ra khi tải dữ liệu cho đơn vay với ID ${loanApplicationId}. Vui lòng thử lại sau.`}
       />
     );
   }
@@ -95,55 +109,20 @@ export default function LoanOffersPage() {
     );
   }
 
-  const application: LoanApplication = {
-    id: userLoanApplication.id,
-    applicationId: userLoanApplication.applicationId,
-    borrower: userLoanApplication.borrower,
-    collateralAsset: userLoanApplication.collateralType,
-    collateralAmount: userLoanApplication.collateralAmount,
-    status: userLoanApplication.status,
-    timeCreated: formatDate(userLoanApplication.timeCreated),
-    offerCount: userLoanApplication.offerCount ?? BigInt(0),
-    // NFT fields
-    nftId: userLoanApplication.nftId,
-    acceptedOfferId: userLoanApplication.acceptedOfferId,
-    timeAccepted: userLoanApplication.timeAccepted,
-  };
+  const application = userLoanApplication;
 
-  const nft: UserNft | null =
-    userLoanApplication.nftId && userNft
-      ? {
-          id: userNft.id,
-          nftId: userNft.nftId,
-          nftAddress: userNft.nftAddress,
-          tokenId: userNft.tokenId,
-          depositedAt: userNft.timeCreated,
-          status: userNft.status,
-        }
-      : null;
+  const nft = userNft;
 
-  const offers: LoanOffer[] =
-    userLoanOffers?.content.map((offer, index) => ({
-      id: index,
-      loanApplicationId: offer.applicationId,
-      offerId: offer.offerId,
-      requester: offer.lender,
-      loanAmount: offer.loanAmount,
-      interestRate: offer.interestRate,
-      duration: offer.duration,
-      status: offer.status,
-      timeCreated: formatDate(offer.timeCreated),
-      timeCancelled: offer.timeCancelled
-        ? formatDate(offer.timeCancelled)
-        : undefined,
-    })) ?? [];
+  const offers = userLoanOffers;
 
   const borrowerOffers = offers.filter(
-    (item) => item.requester.toLowerCase() != address?.toLowerCase(),
+    (item) =>
+      item.requester.toLowerCase() == application.borrower.toLowerCase(),
   );
 
   const lenderOffers = offers.filter(
-    (item) => item.requester.toLowerCase() == address?.toLowerCase(),
+    (item) =>
+      item.requester.toLowerCase() != application.borrower.toLowerCase(),
   );
 
   const accpeptedOffer = application.acceptedOfferId
@@ -194,21 +173,26 @@ export default function LoanOffersPage() {
     setTxMessage(null);
   };
 
-  const handleOpenCancelOfferDialog = (offerId: bigint) => {
-    setSelectedCancelOfferId(offerId);
+  const handleOpenCancelOfferDialog = (index: number, offerType: string) => {
+    if (offerType === "borrower") setSelectedCancelOffer(borrowerOffers[index]);
+    else setSelectedCancelOffer(lenderOffers[index]);
+
     setIsCancelDialogOpen(true);
     setCancelTxStatus(null);
     setCancelTxMessage(null);
   };
 
-  const handleOpenAcceptOfferDialog = (offerId: bigint) => {
-    setSelectedAcceptOfferId(offerId);
+  const handleOpenAcceptOfferDialog = (index: number, offerType: string) => {
+    if (offerType === "borrower") setSelectedCancelOffer(borrowerOffers[index]);
+    else setSelectedCancelOffer(lenderOffers[index]);
     setIsAcceptDialogOpen(true);
     setAcceptTxStatus(null);
     setAcceptTxMessage(null);
   };
 
   const handleCancelOffer = async () => {
+    const selectedCancelOfferId = selectedCancelOffer?.offerId;
+
     if (!selectedCancelOfferId) {
       return;
     }
@@ -244,6 +228,8 @@ export default function LoanOffersPage() {
   };
 
   const handleAcceptOffer = async () => {
+    const selectedAcceptOfferId = selectedAcceptOffer?.offerId;
+
     if (!selectedAcceptOfferId) {
       return;
     }
@@ -278,25 +264,13 @@ export default function LoanOffersPage() {
     }
   };
 
-  const canAcceptOffer = (offer: LoanOffer) => {
-    const hasValidStatus =
-      offer.status === "CREATED" && application.status === "CREATED";
-    const isDifferentUser =
-      address != undefined &&
-      offer.requester.toLowerCase() !== address.toLowerCase();
-    return hasValidStatus && isDifferentUser;
-  };
-
   return (
     <WalletRequired
       title="Trang chi tiết đơn vay yêu cầu kết nối ví"
       message="Kết nối ví để xem và tạo offer vay cho từng đơn vay."
     >
       <main className="space-y-6">
-        <BackButton
-          title="Quay lại "
-          
-        />
+        <BackButton title="Quay lại " />
 
         {application ? (
           <>
@@ -326,14 +300,14 @@ export default function LoanOffersPage() {
                   />
                   <DetailCard
                     label="Tài sản thế chấp"
-                    value={application.collateralAsset}
+                    value={application.collateralType}
                     valueClassName="font-medium"
                     className="detail-card-bg"
                   />
                   <DetailCard
                     label="Số lượng thế chấp"
                     value={
-                      application.collateralAsset === "ETHER"
+                      application.collateralType === "ETHER"
                         ? formatEther(application.collateralAmount)
                         : application.collateralAmount.toString()
                     }
@@ -461,11 +435,13 @@ export default function LoanOffersPage() {
               <BorrowerLoanRequestTable
                 title="Danh sách offer của người tạo đơn"
                 requests={borrowerOffers}
+                application={application}
                 emptyText="Chưa có offer nào từ người tạo đơn"
                 onCancelRequest={handleOpenCancelOfferDialog}
                 onAcceptRequest={handleOpenAcceptOfferDialog}
-                canAcceptRequest={canAcceptOffer}
-                hilightRowId={accpeptedOffer ? accpeptedOffer.id.toString() : undefined}
+                hilightRowId={
+                  accpeptedOffer ? accpeptedOffer.id.toString() : undefined
+                }
               />
             </section>
 
@@ -479,34 +455,49 @@ export default function LoanOffersPage() {
               <LenderLoanRequestTable
                 title="Danh sách offer của người cho vay"
                 requests={lenderOffers}
+                application={application}
                 emptyText="Chưa có offer nào từ người cho vay"
                 onCancelRequest={handleOpenCancelOfferDialog}
                 onAcceptRequest={handleOpenAcceptOfferDialog}
-                canAcceptRequest={canAcceptOffer}
-                hilightRowId={accpeptedOffer ? accpeptedOffer.id.toString() : undefined}
+                hilightRowId={
+                  accpeptedOffer ? accpeptedOffer.id.toString() : undefined
+                }
               />
             </section>
 
-            <ConfirmDialog
-              open={isCancelDialogOpen}
-              onOpenChange={setIsCancelDialogOpen}
-              title="Xác nhận hủy offer"
-              content="Bạn có chắc chắn muốn hủy offer này? Hành động này không thể hoàn tác."
-              txMessage={cancelTxMessage}
-              txStatus={cancelTxStatus}
-              isSubmtting={isCancelSubmitting}
-              onConfirm={handleCancelOffer}
-            />
-            <ConfirmDialog
-              open={isAcceptDialogOpen}
-              onOpenChange={setIsAcceptDialogOpen}
-              title="Xác nhận chấp nhận offer"
-              content="Bạn có chắc chắn muốn chấp nhận offer này? Hành động này không thể hoàn tác."
-              txMessage={acceptTxMessage}
-              txStatus={acceptTxStatus}
-              isSubmtting={isAcceptSubmitting}
-              onConfirm={handleAcceptOffer}
-            />
+            {/* // Cancle Offer Dialog */}
+            {selectedCancelOffer && (
+              <CancelOfferDialog
+                userBalance={userBalance}
+                application={application}
+                offer={selectedCancelOffer}
+                open={isCancelDialogOpen}
+                onOpenChange={setIsCancelDialogOpen}
+                title="Xác nhận hủy offer"
+                content="Bạn có chắc chắn muốn hủy offer này? Hành động này không thể hoàn tác."
+                txMessage={cancelTxMessage}
+                txStatus={cancelTxStatus}
+                isSubmtting={isCancelSubmitting}
+                onConfirm={handleCancelOffer}
+              />
+            )}
+
+            {/* // Accept Offer Dialog */}
+            {selectedCancelOffer && (
+              <AcceptOfferDialog
+                userBalance={userBalance}
+                application={application}
+                offer={selectedCancelOffer}
+                open={isAcceptDialogOpen}
+                onOpenChange={setIsAcceptDialogOpen}
+                title="Xác nhận chấp nhận offer"
+                content="Bạn có chắc chắn muốn chấp nhận offer này? Hành động này không thể hoàn tác."
+                txMessage={acceptTxMessage}
+                txStatus={acceptTxStatus}
+                isSubmtting={isAcceptSubmitting}
+                onConfirm={handleAcceptOffer}
+              />
+            )}
           </>
         ) : (
           <Card className="bg-sidebar text-foreground">
@@ -515,7 +506,7 @@ export default function LoanOffersPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Không thể tìm thấy đơn vay với ID {params.loanId}. Vui lòng kiểm
+                Không thể tìm thấy đơn vay với ID {loanApplicationId}. Vui lòng kiểm
                 tra lại đường dẫn hoặc quay lại trang danh sách đơn vay.
               </p>
             </CardContent>

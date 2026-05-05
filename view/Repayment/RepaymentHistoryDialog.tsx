@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { UserLoanResponse } from "@/service/modules/loan";
+import { UserLoanResponse } from "@/model/Loan";
+
 
 type RepaymentHistoryDialogProps = {
   open: boolean;

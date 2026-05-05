@@ -1,7 +1,7 @@
 import { LoanFilter, mockLoans, UserLoanResponse } from "@/model/Loan";
 
 import { Page, Pageable, request } from "../api";
-import { LoanPayTransactionResponse, mockLoanPaymentHistory } from "@/model/LoanPayTransaction";
+import { LoanPayTransactionResponse, mockLoanPayTransactionResponse } from "@/model/LoanPayTransaction";
 
 
 
@@ -23,7 +23,7 @@ export async function getLoans({
   }
 
   const data = await request<Page<UserLoanResponse>>({
-    path: "/api/v1//user-loans",
+    path: "/api/v1/user-loans",
     method: "GET",
     query: {
       ...filter,
@@ -36,36 +36,18 @@ export async function getLoans({
   return data;
 }
 
-/**
- * Get loan payment history
- */
-export async function getLoanPaymentHistory(
-  loanId: bigint,
-  pageable?: Pageable,
-): Promise<Page<LoanPayTransactionResponse>> {
+export async function getLoanById(loanId: bigint): Promise<UserLoanResponse> {
   if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
-    console.log("Returning mock loan payment history for loanId:", loanId);
-    const content = mockLoanPaymentHistory.content.filter(
-      (item) => item.loanId === loanId,
-    );
-    return {
-      content,
-      totalElements: content.length,
-      totalPages: 1,
-      size: pageable?.size ?? 10,
-      number: pageable?.page ?? 0,
-    };
+    console.log("Returning mock loan for loanId:", loanId);
+    const val = mockLoans.content.find(loan => loan.loanId === loanId) ?? null;
+    if (!val) throw new Error(`Mock loan with loanId ${loanId} not found`);
+    return val;
   }
-
-  const data = await request<Page<LoanPayTransactionResponse>>({
-    path: `/api/v1/loans/${loanId}/payment-history`,
-    method: "GET",
-    query: {
-      page: pageable?.page ?? 0,
-      size: pageable?.size ?? 10,
-      sort: pageable?.sort ?? "timeCreated,DESC",
-    },
+  const data = await request<UserLoanResponse>({
+      path : `/api/v1/user-loans/${loanId}`,
+      method: "GET",
   });
-
   return data;
 }
+
+

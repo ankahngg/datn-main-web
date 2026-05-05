@@ -1,10 +1,10 @@
 
 import { Page, Pageable, request } from "../api";
 import { LoanFilter } from "@/model/Loan";
-import { mockLoanApplications, UserLoanApplicationResponse } from "@/model/LoanApplication";
+import { LoanApplicationFilter, mockLoanApplications, UserLoanApplicationResponse } from "@/model/LoanApplication";
 
 export interface LoanApplicationParams {
-  filter: LoanFilter;
+  filter: LoanApplicationFilter;
   pageable?: Pageable;
 }
 
@@ -18,7 +18,7 @@ export async function getUserLoanApplications({
     console.log("Returning mock loan applications with filter:", filter, "and pageable:", pageable);
     
     const filteredContent = mockLoanApplications.content.filter(app => {
-      if (filter.user1 && app.borrower.toLowerCase() !== filter.user1.toLowerCase()) {
+      if (filter.borrower && app.borrower !== filter.borrower) {
         return false;
       }
       return true;
@@ -35,7 +35,7 @@ export async function getUserLoanApplications({
   }
 
     const data = await request<Page<UserLoanApplicationResponse>>({
-        path: "/api/v1/loans/user-loan-applications",
+        path: "/api/v1/loan-applications",
         method: "GET",
         query: {
             ...filter,
@@ -57,7 +57,7 @@ export async function getUserLoanApplicationById(applicationId: bigint) {
     return val;
   }
     const data = await request<UserLoanApplicationResponse>({
-        path : `/api/v1/loans/user-loan-applications/${applicationId}`,
+        path : `/api/v1/loan-applications/${applicationId}`,
         method: "GET",
     });
     return data;

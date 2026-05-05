@@ -28,29 +28,33 @@ import {
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
-import { shortAddress } from "@/utils";
-import { applicationStatusVariantMap, applicationStatusLabelMap } from "@/model/LoanApplication";
+import { formatUsdc, isNotProcessing, shortAddress } from "@/utils";
+import { applicationStatusVariantMap, applicationStatusLabelMap, LoanApplication } from "@/model/LoanApplication";
 import { LoanOffer } from "@/model/LoanOffer";
+import { useAccount } from "wagmi";
+import { is } from "zod/v4/locales";
+
 
 type LenderLoanRequestTableProps = {
+  application : LoanApplication;
   requests: LoanOffer[];
   title?: string;
   emptyText?: string;
-  onCancelRequest?: (offerId: bigint) => void;
-  onAcceptRequest?: (offerId: bigint) => void;
-  canAcceptRequest?: (offer: LoanOffer) => boolean;
+  onCancelRequest: (index: number, offerType: string) => void;
+  onAcceptRequest: (index: number, offerType: string) => void;
   hilightRowId?: string;
 };
 
 export function LenderLoanRequestTable({
+  application,
   requests,
   title,
   emptyText,
   onCancelRequest,
   onAcceptRequest,
-  canAcceptRequest,
   hilightRowId,
 }: LenderLoanRequestTableProps) {
+  const { address } = useAccount();
   const {
     sorting,
     setSorting,
@@ -63,7 +67,7 @@ export function LenderLoanRequestTable({
   const columns = React.useMemo<ColumnDef<LoanOffer>[]>(
     () => [
       {
-        accessorKey: "id",
+        accessorKey: "offerId",
         header: sortableHeader<LoanOffer>("ID"),
       },
       {
@@ -76,6 +80,9 @@ export function LenderLoanRequestTable({
       {
         accessorKey: "loanAmount",
         header: sortableHeader<LoanOffer>("Số tiền vay"),
+        cell: ({ row }) => {
+          return formatUsdc(row.original.loanAmount);
+        }
       },
       {
         accessorKey: "interestRate",
@@ -102,8 +109,8 @@ export function LenderLoanRequestTable({
         header: () => <span className="text-foreground">Thao tác</span>,
         cell: ({ row }) => {
           const offer = row.original;
-          const isCancelable = offer.status === "CREATED";
-          const isAcceptable = canAcceptRequest ? canAcceptRequest(offer) : true;
+          const isCancelable = isNotProcessing(application.status) && offer.status === "CREATED" && offer.requester.toLowerCase() === address?.toLowerCase();
+          const isAcceptable = isNotProcessing(application.status) && offer.status === "CREATED" && address?.toLowerCase() == application.borrower.toLowerCase();
 
           return (
             <DropdownMenu>
@@ -118,7 +125,7 @@ export function LenderLoanRequestTable({
                 <DropdownMenuSeparator />
                 {onAcceptRequest && (
                   <DropdownMenuItem
-                    onClick={() => onAcceptRequest(offer.offerId)}
+                    onClick={() => onAcceptRequest(row.index, "lender")}
                     disabled={!isAcceptable}
                     className="cursor-pointer"
                   >
@@ -127,7 +134,7 @@ export function LenderLoanRequestTable({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
-                  onClick={() => onCancelRequest?.(offer.offerId)}
+                  onClick={() => onCancelRequest(row.index, "lender")}
                   variant="destructive"
                   disabled={!isCancelable}
                   className="cursor-pointer"
@@ -141,7 +148,7 @@ export function LenderLoanRequestTable({
         },
       },
     ],
-    [canAcceptRequest, onAcceptRequest, onCancelRequest],
+    [onAcceptRequest, onCancelRequest],
   );
 
   const table = useReactTable({
@@ -183,6 +190,8 @@ export function LenderLoanRequestTable({
             { value: "CREATED", label: applicationStatusLabelMap.CREATED },
             { value: "PENDING_CANCELED", label: applicationStatusLabelMap.PENDING_CANCELED },
             { value: "CANCELED", label: applicationStatusLabelMap.CANCELED },
+            { value: "PENDING_ACCEPTED", label: applicationStatusLabelMap.PENDING_ACCEPTED },
+            { value: "ACCEPTED", label: applicationStatusLabelMap.ACCEPTED },
           ],
         }}
         onClearFilters={() => {

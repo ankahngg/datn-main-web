@@ -19,8 +19,8 @@ import { TransactionHistoryTable } from "@/view/Asset/TransactionHistoryTable";
 
 import { contractAddress, usdcAddress } from "@/config/app.config";
 import { useUserBalance, useUserNfts } from "@/hooks/use-user-asset";
-import { FullScreenError } from "@/MyComponent/FullScreenError";
-import { FullScreenLoading } from "@/MyComponent/FullLoadingScreen";
+import { FullScreenError } from "@/components/shared/FullScreenError";
+import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
 import { useBankTransactions } from "@/hooks/use-bank-transactions";
 import { formatDate } from "@/utils";
 import PageHeader from "@/components/shared/PageHeader";
@@ -105,7 +105,7 @@ export default function AssetsPage() {
         nftAddress: nft.nftAddress,
         tokenId: nft.tokenId,
         name: `NFT #${nft.nftId}`,
-        depositedAt: formatDate(nft.timeCreated),
+        timeCreated: formatDate(nft.timeCreated),
         status: nft.status
         
       }));

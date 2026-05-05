@@ -9,13 +9,13 @@ export interface UserLoanApplicationResponse {
   collateralType: CollateralType;
   collateralAmount: bigint;
   nftId?: bigint;
-  status: ApplicationStatusResponse;
   timeAccepted?: string;
   timeCancelled?: string;
-  timeCreated?: string;
+  timeCreated: string;
   createdAt: string;
   acceptedOfferId?: bigint;
-  offerCount?: bigint; // Số lượng offer đã được tạo cho đơn vay này
+  offerCount?: number; // Số lượng offer đã được tạo cho đơn vay này
+  status: ApplicationStatusResponse;
 }
 
 export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
@@ -23,13 +23,13 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
     {
       id: 1,
       applicationId: BigInt("1001"),
-      borrower: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+      borrower: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7098",
       collateralType: "ETHER",
       collateralAmount: BigInt("50000000000000000"), // 0.05 ETH
-      status: "PENDING_CREATED",
+      status: "CREATED",
       timeCreated: "2024-04-01T12:00:00Z",
       createdAt: "2024-04-01T12:00:00Z",
-      offerCount: BigInt("2"),
+      offerCount: 2,
     },
     {
       id: 2,
@@ -43,7 +43,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
       timeCreated: "2024-03-01T12:00:00Z",
       createdAt: "2024-03-01T12:00:00Z",
       acceptedOfferId: BigInt("2001"),
-      offerCount: BigInt("1"),
+      offerCount: 1,
     },
     {
       id: 3,
@@ -55,7 +55,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
       timeCancelled: "2024-02-10T12:00:00Z",
       timeCreated: "2024-02-01T12:00:00Z",
       createdAt: "2024-02-01T12:00:00Z",
-      offerCount: BigInt("0"),
+      offerCount: 0,
     },
     {
       id: 4,
@@ -67,7 +67,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
       status: "PENDING_ACCEPTED",
       timeCreated: "2024-04-10T12:00:00Z",
       createdAt: "2024-04-10T12:00:00Z",
-      offerCount: BigInt("1"),
+      offerCount: 1,
     },
     {
       id: 5,
@@ -78,7 +78,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
       status: "CREATED",
       timeCreated: "2024-04-12T09:30:00Z",
       createdAt: "2024-04-12T09:30:00Z",
-      offerCount: BigInt("0"),
+      offerCount: 1,
     },
     {
       id: 6,
@@ -90,7 +90,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
       status: "PENDING_CANCELED",
       timeCreated: "2024-04-15T11:45:00Z",
       createdAt: "2024-04-15T11:45:00Z",
-      offerCount: BigInt("1"),
+      offerCount: 1,
     },
   ],
   totalElements: 6,
@@ -122,25 +122,34 @@ export type LoanApplication = {
   id: number;
   applicationId: bigint;
   borrower: string;
-  collateralAsset: string;
+  collateralType: CollateralType;
   collateralAmount: bigint;
-  loanAmountUsdc?: bigint;
-  monthlyInterestRate?: bigint;
-  loanTermMonths?: bigint;
-  totalRepayment?: bigint;
+  nftId?: bigint;
+  acceptedOfferId?: bigint;
+  timeCancelled ?: string;
+  timeAccepted  ?: string;
+  timeCreated : string;
+  offerCount: number; // Số lượng offer đã nhận được
+  status: ApplicationStatusResponse;
+
   // NFT Fields
   nftAddress?: string;
   tokenId?: bigint;
-  nftId?: bigint;
   nftName?: string;
   nftDescription?: string;
   nftCollectionName?: string;
   nftImageUrl?: string;
-  status: ApplicationStatusResponse;
-  timeCreated: string;
-  acceptedOfferId?: bigint; // ID của offer đã chấp nhận, nếu có
-  timeAccepted?: string; // Thời điểm bắt đầu tính lãi, nếu đã có offer được chấp nhận
-  offerCount: bigint; // Số lượng offer đã nhận được
+  assetName?: string;
+};
+
+export type LoanApplicationFilter = {
+  borrower?: string;
+  collateralType?: CollateralType;
+  collateralAmount ?: bigint;
+  nftId ?: bigint;
+  status ?: ApplicationStatusResponse;
+  fromTimeCreated?: string; // local date-time string
+  toTimeCreated?: string;   // local date-time string
 };
 
 export type LoanApplicationSubmitValues = {

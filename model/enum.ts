@@ -25,3 +25,5 @@ export type UserNFTResponseStatus = "DEPOSITED" | "WITHDRAWN" | "PENDING_DEPOSIT
 
 export type CollateralType = "ETHER" | "NFT";
 export type PayActionResponse = "PAY" | "END";
+
+export type RepaymentActionType = "VIEW_DETAILS" | "VIEW_HISTORY" | "REPAY" | "END_LOAN";

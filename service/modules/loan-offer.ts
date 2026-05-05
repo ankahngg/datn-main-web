@@ -1,9 +1,9 @@
-import { mockLoanOffers, UserLoanOfferResponse } from "@/model/LoanOffer";
+import { LoanOfferFilter, mockLoanOffers, UserLoanOfferResponse } from "@/model/LoanOffer";
 import { Page, Pageable, request } from "../api";
 import { LoanFilter } from "@/model/Loan";
 
 export interface LoanOfferParams {
-  filter: LoanFilter;
+  filter: LoanOfferFilter;
   pageable?: Pageable;
 }
 
@@ -19,7 +19,7 @@ export async function getUserLoanOffers({
     }
 
     const data = await request<Page<UserLoanOfferResponse>>({
-        path: "/api/v1/loans/user-loan-offers",
+        path: "/api/v1/loan-applications/offers",
         method: "GET",
         query: {
             ...filter,
@@ -41,7 +41,7 @@ export async function getUserLoanOfferById(offerId: bigint) {
     return val;
   }
     const data = await request<UserLoanOfferResponse>({
-        path : `/api/v1/loans/user-loan-offers/${offerId}`,
+        path : `/api/v1/loan-applications/offers/${offerId}`,
         method: "GET",
     });
     return data;
@@ -60,7 +60,7 @@ export async function getLoanOffersByApplicationId(applicationId: bigint) : Prom
         };
     }
     const data = await request<Page<UserLoanOfferResponse>>({
-        path : `/api/v1/loans/user-loan-applications/${applicationId}/offers`,
+        path : `/api/v1/loan-applications/${applicationId}/offers`,
         method: "GET",
     });
     return data;

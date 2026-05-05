@@ -40,3 +40,7 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: any[]) {
   return twMerge(clsx(inputs));
 }
+
+export function isNotProcessing(status: string) {
+  return status.includes("PENDING") == false;
+}

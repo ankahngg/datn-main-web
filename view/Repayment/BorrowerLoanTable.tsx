@@ -29,21 +29,20 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-import {
-  loanStatusLabelMap,
-  loanStatusVariantMap,
-  type Loan,
-  type RepaymentActionType,
-} from "./types";
-import { shortAddress } from "@/utils";
+
+import { formatDate, formatUsdc, shortAddress } from "@/utils";
+import { useAccount } from "wagmi";
+import { is } from "zod/v4/locales";
+import { UserLoan, UserLoanStatusLabelMap, UserLoanStatusVariantMap } from "@/model/Loan";
+import { RepaymentActionType } from "@/model/enum";
 
 type RepaymentTableProps = {
-  loans: Loan[];
+  loans: UserLoan[];
   isLoading?: boolean;
-  onAction: (action: RepaymentActionType, loan: Loan) => void;
+  onAction: (action: RepaymentActionType, loan: UserLoan) => void;
 };
 
-export function RepaymentTable({
+export function BorrowerLoanTable({
   loans,
   isLoading = false,
   onAction,
@@ -58,11 +57,13 @@ export function RepaymentTable({
     clearFilters,
   } = useDataTableState();
 
-  const columns = React.useMemo<ColumnDef<Loan>[]>(
+  const {address} = useAccount();
+
+  const columns = React.useMemo<ColumnDef<UserLoan>[]>(
     () => [
       {
         accessorKey: "lender",
-        header: sortableHeader<Loan>("Người cho vay"),
+        header: sortableHeader<UserLoan>("Người cho vay"),
         cell: ({ row }) => (
           <span className="font-mono text-foreground">
             {shortAddress(row.original.lender)}
@@ -71,49 +72,49 @@ export function RepaymentTable({
       },
       {
         accessorKey: "loanAmount",
-        header: sortableHeader<Loan>("Số tiền vay"),
-        cell: ({ row }) => (
-          <span className="text-foreground">{row.original.loanAmount}</span>
-        ),
+        header: sortableHeader<UserLoan>("Số tiền vay"),
+        cell: ({ row }) => {
+          return formatUsdc(row.original.loanAmount);
+        }
+        ,
       },
       {
         accessorKey: "totalAmountHaveToPay",
-        header: sortableHeader<Loan>("Tổng phải trả"),
-        cell: ({ row }) => (
-          <span className="text-foreground">{row.original.totalAmountHaveToPay}</span>
-        ),
+        header: sortableHeader<UserLoan>("Tổng phải trả"),
+        cell: ({ row }) => {
+          return formatUsdc(row.original.totalAmountHaveToPay);
+        }
       },
       {
         accessorKey: "amountPaid",
-        header: sortableHeader<Loan>("Đã trả"),
-        cell: ({ row }) => (
-          <span className="text-foreground">{row.original.amountPaid}</span>
-        ),
+        header: sortableHeader<UserLoan>("Đã trả"),
+        cell: ({ row }) => {
+          return formatUsdc(row.original.amountPaid);
+        }
       },
       {
         accessorKey: "loanStatus",
-        header: sortableHeader<Loan>("Trạng thái"),
+        header: sortableHeader<UserLoan>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.loanStatus;
           return (
-            <Badge variant={loanStatusVariantMap[status]}>
-              {loanStatusLabelMap[status]}
+            <Badge variant={UserLoanStatusVariantMap[status]}>
+              {UserLoanStatusLabelMap[status]}
             </Badge>
           );
         },
       },
       {
         accessorKey: "timeCreated",
-        header: sortableHeader<Loan>("Thời gian tạo"),
-        cell: ({ row }) => (
-          <span className="text-foreground">
-            {new Date(row.original.timeCreated).toLocaleDateString("vi-VN")}
-          </span>
-        ),
+        header: sortableHeader<UserLoan>("Thời gian tạo"),
+        cell: ({ row }) => {
+          return formatDate(row.original.timeCreated);
+        }
+        ,
       },
       {
         accessorKey: "duration",
-        header: sortableHeader<Loan>("Thời hạn"),
+        header: sortableHeader<UserLoan>("Thời hạn"),
         cell: ({ row }) => (
           <span className="text-foreground">{row.original.duration}</span>
         ),
@@ -123,7 +124,8 @@ export function RepaymentTable({
         header: () => <span className="text-foreground">Hành động</span>,
         cell: ({ row }) => {
           const loan = row.original;
-          const isRepayable = loan.loanStatus === "CREATED";
+          // Chỉ cho phép khi nào khoản vay đang ở trạng thái CREATED và người dùng hiện tại là người vay
+          const isPayable = loan.loanStatus === "CREATED" && address?.toLowerCase() === loan.borrower.toLowerCase();
 
           return (
             <DropdownMenu>
@@ -163,16 +165,15 @@ export function RepaymentTable({
 
                 <DropdownMenuItem
                   onClick={() => onAction("REPAY", loan)}
-                  disabled={!isRepayable}
+                  disabled={!isPayable}
                   className="cursor-pointer"
                 >
                   <Wallet className="size-4" />
                   Trả vay
                 </DropdownMenuItem>
-
                 <DropdownMenuItem
                   onClick={() => onAction("END_LOAN", loan)}
-                  disabled={!isRepayable}
+                  disabled={!isPayable}
                   variant="destructive"
                   className="cursor-pointer"
                 >

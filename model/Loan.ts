@@ -1,19 +1,16 @@
 import { Page } from "@/service/api";
-import { ApplicationStatusResponse, LoanStatusResponse } from "./enum";
+import { ApplicationStatusResponse, LoanStatusResponse, PayActionResponse } from "./enum";
 
 
 export interface LoanFilter {
-  user1?: string; // normalized to lowercase
-  user2?: string; // normalized to lowercase
-
-  fromTimeCreated?: string; // LocalDateTime -> ISO string
-  toTimeCreated?: string;
-
-  loanStatus?: LoanStatusResponse;
-  applicationStatus?: ApplicationStatusResponse;
-  offerStatus?: ApplicationStatusResponse;
-  transferStatus?: ApplicationStatusResponse;
-  transferOfferStatus?: ApplicationStatusResponse;
+  borrower  ?: string;
+  lender ?: string;
+  loanAmount ?: bigint;
+  interestRate ?: bigint;
+  duration ?: bigint;
+  loanStatus ?: LoanStatusResponse;
+  fromTimeCreated?: string; // local date-time string
+  toTimeCreated?: string;   // local date-time string
 }
 
 export interface UserLoanResponse {
@@ -54,6 +51,7 @@ export interface UserLoan {
   timeLiquidated?: string;
   timeCreated: string;
   createdAt: string;
+  remainingAmount: bigint; // totalAmountHaveToPay - amountPaid
 }
 
 export const UserLoanStatusVariantMap: Record<LoanStatusResponse, "default" | "success" | "warning" | "danger"> = {
@@ -76,6 +74,16 @@ export const UserLoanStatusLabelMap: Record<LoanStatusResponse, string> = {
     AUCTION: "Đang bị đấu giá",
     PENDING_LIQUIDATION: "Đang thanh lý",
     LIQUIDATED: "Đã bị thanh lý",
+};
+
+export const payActionLabelMap: Record<PayActionResponse, string> = {
+  PAY: "Trả vay",
+  END: "Hoàn tất vay",
+};
+
+export const payActionVariantMap: Record<PayActionResponse, "success" | "secondary"> = {
+  PAY: "secondary",
+  END: "success",
 };
 
 export const mockLoans: Page<UserLoanResponse> = {

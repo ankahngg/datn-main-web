@@ -3,24 +3,19 @@
 import { useMemo, useState } from "react";
 import { useAccount, useWriteContract } from "wagmi";
 import { Wallet } from "lucide-react";
-import { contractAddress } from "@/config/app.config";
-import abiData from "@/abi.json";
 import WalletRequired from "@/components/wallet-required";
-import { RepaymentTable } from "@/view/Repayment/RepaymentTable";
-import {
-  RepaymentDetailsDialog,
-  RepaymentHistoryDialog,
-  RepaymentDialog,
-  EndLoanDialog,
-} from "@/view/Repayment/RepaymentActionDialogs";
-
-import type { Loan, RepaymentActionType } from "@/view/Repayment/types";
-
-import { formatUnits, parseUnits } from "viem";
+import { BorrowerLoanTable } from "@/view/Repayment/BorrowerLoanTable";
 
 import PageHeader from "@/components/shared/PageHeader";
-import { useGetLoans } from "@/hooks/use-get-loans";
-import { UserLoanResponse } from "@/model/Loan";
+import { useGetLoans, useGetLoans2 } from "@/hooks/use-get-loans";
+import { UserLoan, UserLoanResponse } from "@/model/Loan";
+import { EndLoanDialog } from "@/view/Repayment/EndLoanDialog";
+import { RepaymentDetailsDialog } from "@/view/Repayment/RepaymentDetailsDialog";
+import { RepaymentDialog } from "@/view/Repayment/RepaymentDialog";
+import { RepaymentHistoryDialog } from "@/view/Repayment/RepaymentHistoryDialog";
+import { RepaymentActionType } from "@/model/enum";
+import { contractAddress } from "@/config/app.config";
+import abiData from "@/abi.json";
 
 export default function RepaymentPage() {
   const { address } = useAccount();
@@ -33,7 +28,7 @@ export default function RepaymentPage() {
   const [isEndLoanDialogOpen, setIsEndLoanDialogOpen] = useState(false);
 
   // Selected loan
-  const [selectedLoan, setSelectedLoan] = useState<UserLoanResponse | null>(null);
+  const [selectedLoan, setSelectedLoan] = useState<UserLoan | null>(null);
 
   // Transaction states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,41 +36,20 @@ export default function RepaymentPage() {
   const [txMessage, setTxMessage] = useState<string | null>(null);
 
   // Fetch repayment loans
-  const { data: repaymentLoans, isLoading: isLoadingLoans } = useGetLoans({
+  const { data: repaymentLoans, isLoading: isLoadingLoans } = useGetLoans2({
     filter: { 
-      user1: address, // borrower
+      borrower: address,
      },
     page: 0,
     size: 10,
     sort: "timeCreated,DESC",
   });
 
-  const loans: Loan[] = useMemo(() => {
-    return repaymentLoans?.content.map((loan) => ({
-      id: loan.id,
-      loanId: loan.loanId,
-      applicationId : loan.applicationId,
-      offerId   : loan.offerId,
-      borrower: loan.borrower,
-      lender: loan.lender,
-      loanAmount: formatUnits(loan.loanAmount, 6),
-      interestRate: loan.interestRate.toString(),
-      duration: loan.duration.toString(),
-      totalAmountHaveToPay: formatUnits(loan.totalAmountHaveToPay, 6),
-      amountPaid: formatUnits(loan.amountPaid, 6),
-      loanStatus: loan.loanStatus,
-      timePaid: loan.timePaid,
-      timeAuction: loan.timeAuction,
-      timeLiquidated: loan.timeLiquidated,
-      timeCreated: loan.timeCreated,
-      createdAt: loan.createdAt,
-    })) ?? [];
-  }, [repaymentLoans]);
+  const loans = repaymentLoans ?? [];
 
   // Handle action buttons
-  const handleTableAction = (action: RepaymentActionType, loan: Loan) => {
-    const selected = repaymentLoans?.content.find((l) => l.id === loan.id) ?? null;
-    setSelectedLoan(selected);
+  const handleTableAction = (action: RepaymentActionType, loan: UserLoan) => {
+    setSelectedLoan(loan);
     
     switch (action) {
       case "VIEW_DETAILS":
@@ -107,6 +81,15 @@ export default function RepaymentPage() {
 
     try {
       // Call service function
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "payLoan",
+        args: [selectedLoan.loanId, BigInt(amount)],
+      });
+
+      setTxStatus("success");
+      setTxMessage("Trả nợ thành công! Dư nợ của bạn sẽ được cập nhật sau khi giao dịch được xác nhận.");
      
     } catch (error) {
       console.error("Error repaying loan:", error);
@@ -157,7 +140,7 @@ export default function RepaymentPage() {
             <span>Danh sách khoản vay</span>
           </div>
 
-          <RepaymentTable
+          <BorrowerLoanTable
             loans={loans}
             isLoading={isLoadingLoans}
             onAction={handleTableAction}

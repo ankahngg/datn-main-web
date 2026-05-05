@@ -39,7 +39,7 @@ type LendingTableProps = {
   onAction: (action: string, loan: UserLoan) => void;
 };
 
-export function LendingTable({ loans, isLoading = false, onAction }: LendingTableProps) {
+export function LenderLoanTable({ loans, isLoading = false, onAction }: LendingTableProps) {
   const {
     sorting,
     setSorting,

@@ -8,11 +8,11 @@ import { formatEther } from "viem";
 import WalletRequired from "@/components/wallet-required";
 import PageHeader from "@/components/shared/PageHeader";
 import { LoanApplicationTable } from "@/view/Borrowing/LoanApplicationTable";
-import { useUserLoanApplications, useUserLoanApplications2 } from "@/hooks/use-user-loan";
-import { FullScreenLoading } from "@/MyComponent/FullLoadingScreen";
+import { useUserLoanApplications, useUserLoanApplications2 } from "@/hooks/use-get-loan-application";
+import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
 import { formatDate } from "@/utils";
 import { LoanApplication } from "@/model/LoanApplication";
-import { FullScreenError } from "@/MyComponent/FullScreenError";
+import { FullScreenError } from "@/components/shared/FullScreenError";
 import { COMMON_ERROR_MESSAGE, COMMON_LOADING_MESSAGE } from "@/constaints";
 
 export default function LendingMarketplacePage() {

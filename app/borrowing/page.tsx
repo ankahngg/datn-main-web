@@ -14,7 +14,7 @@ import { LoanApplicationTable } from "@/view/Borrowing/LoanApplicationTable";
 
 import { useUserBalance, useUserNfts } from "@/hooks/use-user-asset";
 
-import { useUserLoanApplications } from "@/hooks/use-user-loan";
+import { useUserLoanApplications, useUserLoanApplications2 } from "@/hooks/use-get-loan-application";
 import { time } from "console";
 import { formatDate } from "@/utils";
 import PageHeader from "@/components/shared/PageHeader";
@@ -40,12 +40,13 @@ export default function BorrowingPage() {
       },
     }
   );
-  const {data: userLoanApplications, isLoading: isLoadingLoanApplications } = useUserLoanApplications({
-    filter: { user1: address },
+  const {data: userLoanApplications, isLoading: isLoadingLoanApplications } = useUserLoanApplications2({
+    filter: { borrower: address },
     page: 0,
     size: 10,
     sort: "createdAt,DESC",
   });
+  console.log("User Loan Applications:", userLoanApplications);
 
   const ethBalance = userBalance ? Number(formatEther(userBalance.ethBalance)) : 0;
   const availableNfts = (userNfts?.content ?? [])
@@ -57,26 +58,7 @@ export default function BorrowingPage() {
       name: `NFT #${nft.nftId.toString()}`,
     }));
 
-  const applications: LoanApplication[] = useMemo(() => {
-    if (isLoadingLoanApplications) {
-      return [];
-    }
-    return userLoanApplications?.content.map((application) => ({
-      id: application.id,
-      applicationId: application.applicationId,
-      borrower: application.borrower,
-      collateralAsset : application.collateralType,
-      collateralAmount: application.collateralAmount,
-      status: application.status,
-      timeCreated: formatDate(application.timeCreated),
-      offerCount: application.offerCount ?? BigInt(0),
-      // NFT fields
-      nftId: application.nftId,
-      acceptedOfferId: application.acceptedOfferId,
-      timeAccepted: application.timeAccepted,
-
-    })) ?? [];
-  }, [userLoanApplications, isLoadingLoanApplications]);
+  const applications = userLoanApplications ?? [];
 
   const handleSubmitApplication = async (values: LoanApplicationSubmitValues) => {
     if (!address) {

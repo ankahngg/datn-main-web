@@ -8,6 +8,12 @@ export interface UserBalanceResponse {
   ethBalance: bigint;
 } 
 
+export interface UserBalance {
+  userWalletAddress : string;
+  usdcBalance: bigint;
+  ethBalance: bigint;
+}
+
 export interface UserNftFilter {
     user?: string;
     nftAddress?: string;
@@ -49,8 +55,10 @@ export type UserNft = {
   name?: string;
   description?: string;
     collectionName?: string;
-  depositedAt: string;
+  timeCreated: string;
   status: UserNFTResponseStatus;
+  timeWithdrawn?: string;
+
 };
 
 export type AssetTransferSubmitValues = {

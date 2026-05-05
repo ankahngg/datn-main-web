@@ -11,11 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-
-import { loanStatusLabelMap, loanStatusVariantMap } from "./types";
 import { calEndDate, formatDate, formatUsdc, shortAddress } from "@/utils";
-import { UserLoanResponse } from "@/service/modules/loan";
+
 import { DetailCard } from "@/components/shared/DetailCard";
+import { UserLoanResponse, UserLoanStatusLabelMap, UserLoanStatusVariantMap } from "@/model/Loan";
 
 type RepaymentDetailsDialogProps = {
   open: boolean;
@@ -37,15 +36,16 @@ export function RepaymentDetailsDialog({ open, onOpenChange, loan }: RepaymentDe
         </DialogHeader>
 
         <div className="space-y-6">
-          <section className="grid gap-4 md:grid-cols-2">
-            <DetailCard
+          <section className="grid gap-4 md:grid-cols-1">
+            <DetailCard 
+            
               label="Người vay"
-              value={shortAddress(loan.borrower)}
+              value={loan.borrower}
               valueClassName="font-mono"
             />
             <DetailCard
               label="Người cho vay"
-              value={shortAddress(loan.lender)}
+              value={loan.lender}
               valueClassName="font-mono"
             />
           </section>
@@ -73,10 +73,10 @@ export function RepaymentDetailsDialog({ open, onOpenChange, loan }: RepaymentDe
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Trạng thái khoản vay</p>
-                <p className="mt-1 text-sm text-foreground">{loanStatusLabelMap[loan.loanStatus]}</p>
+                <p className="mt-1 text-sm text-foreground">{UserLoanStatusLabelMap[loan.loanStatus]}</p>
               </div>
-              <Badge variant={loanStatusVariantMap[loan.loanStatus]}>
-                {loanStatusLabelMap[loan.loanStatus]}
+              <Badge variant={UserLoanStatusVariantMap[loan.loanStatus]}>
+                {UserLoanStatusLabelMap[loan.loanStatus]}
               </Badge>
             </div>
 
