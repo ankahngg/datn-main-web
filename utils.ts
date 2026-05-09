@@ -14,7 +14,8 @@ export function formatDate(dateString?: string) {
   }).format(new Date(dateString));
 }
 
-export function shortAddress(address: string, startChars = 6, endChars = 4) {
+export function shortAddress(address?: string , startChars = 6, endChars = 4) {
+  if (!address) return "-";
   if (address.length <= startChars + endChars) return address;
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 }

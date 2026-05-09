@@ -41,6 +41,7 @@ export function useGetLoanTransfers2(params: LoanTransferParams) {
                 timeCreated: item.timeCreated,
                 timeCancelled: item.timeCancelled,
                 timeAccepted: item.timeAccepted,
+                acceptedPrice: item.acceptedPrice,
             }));
             return res;
         }
@@ -79,6 +80,7 @@ export function useGetLoanTransferById2(transferId: bigint | undefined) {
                 timeCreated: data.timeCreated,
                 timeCancelled: data.timeCancelled,
                 timeAccepted: data.timeAccepted,
+                acceptedPrice: data.acceptedPrice,
             };
             return res;
         }

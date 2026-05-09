@@ -12,6 +12,8 @@ export type UserLoanTransferResponse = {
   timeCreated: string;
   timeCancelled?: string;
   timeAccepted?: string;
+  acceptedPrice?: bigint;
+  
 };
 
 export type UserLoanTransfer = {
@@ -25,6 +27,7 @@ export type UserLoanTransfer = {
     timeCreated: string;
     timeCancelled?: string;
     timeAccepted?: string;
+    acceptedPrice?: bigint;
 };
 
 export type LoanTransferFilter = {
@@ -48,6 +51,17 @@ export const LoanTransferActionLabelMap: Record<LoanTransferAction, string> = {
   CANCEL_TRANSFER: "Hủy chuyển nhượng",
 };
 
+export type CreateLoanTransferApplicationSubmit = {
+  seller: string;
+  price: bigint;
+  loanId: bigint;
+}
+
+export type CreateLoanTransferApplicationSubmit2 = {
+  seller: string;
+  price: bigint;
+  loanId: bigint;
+}
 
 export const mockLoanTransfersResponse: Page<UserLoanTransferResponse> = {
 
@@ -72,6 +86,7 @@ export const mockLoanTransfersResponse: Page<UserLoanTransferResponse> = {
     status: "ACCEPTED",
     timeCreated: "2024-06-02T11:00:00Z",
     timeAccepted: "2024-06-03T12:00:00Z",
+    acceptedPrice: BigInt(950000000), // Accepted at 950 USDC
   },
   {
     id: 3,

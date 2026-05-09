@@ -39,13 +39,34 @@ export type AuctionTransaction = {
 };
 
 export type AuctionTransactionFilter = {
-    auctionId ?: bigint;
+    auctionId ?: number;
     auctionAction ?: AuctionActionResponse;
     bidder ?: string;
     bidAmount ?: bigint;
     fromTimeCreated?: string; // local date-time string
     toTimeCreated?: string;   // local date-time string
     status ?: TransactionStatus;
+}
+
+export const AUCTION_TRANSACTIONS_ACTION = [
+    "VIEW_DETAILS",
+]
+
+export type AuctionTransactionAction = typeof AUCTION_TRANSACTIONS_ACTION[number];
+
+export type AuctionTransactionActionLabelMap = {
+    VIEW_DETAILS: "Xem chi tiết",
+}
+
+export type AuctionBidSubmit = {
+    auctionId: bigint;
+    bidAmount: bigint;
+    bidder: string;
+}
+
+export type AuctionFinalizeSubmit = {
+    auctionId: bigint;
+   
 }
 
 export const mockAuctionTransactionsResponse: Page<AuctionTransactionResponse> = {
@@ -55,7 +76,7 @@ export const mockAuctionTransactionsResponse: Page<AuctionTransactionResponse> =
             auctionId: BigInt(1001),
             auctionAction: "BID",
             bidder: "0xBidderAddress1",
-            bidAmount: BigInt(500),
+            bidAmount: BigInt(500000000), // 500 USDC
             endTime: "2024-06-01T12:00:00Z",
             txHash: "0xabc123...def456",
             logIndex: 0,
@@ -69,7 +90,7 @@ export const mockAuctionTransactionsResponse: Page<AuctionTransactionResponse> =
             auctionId: BigInt(1001),
             auctionAction: "FINALIZE",
             bidder: "0xBidderAddress1",
-            bidAmount: BigInt(500),
+            bidAmount: BigInt(600000000), // 600 USDC
             endTime: "2024-06-01T12:00:00Z",
             txHash: "0xdef456...abc123",
             logIndex: 1,

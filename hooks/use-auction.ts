@@ -3,33 +3,27 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Page } from "@/service/api";
 import { AuctionFilter, AuctionResponse, Auction } from "@/model/Auction";
-import { 
-  getAuctions, 
-  getAuctionById, 
+import {
+  getAuctions,
+  getAuctionById,
+  AuctionParams,
 } from "@/service/modules/auction";
 
 const AUCTION_KEY = "auction";
 const AUCTIONS_KEY = "auctions";
 
-export interface UseAuctionsOptions {
-  filter: AuctionFilter;
-  page?: number;
-  size?: number;
-  sort?: string;
-}
-
 /**
  * Get auctions with filtering and pagination - returns raw API response
  */
-export function useAuctions(options: UseAuctionsOptions) {
-  const { filter, page = 0, size = 10, sort = "timeCreated,DESC" } = options;
+export function useAuctions(options: AuctionParams) {
+  const { filter, pageable } = options;
 
   return useQuery<Page<AuctionResponse>, Error>({
-    queryKey: [AUCTIONS_KEY, filter, page, size, sort],
+    queryKey: [AUCTIONS_KEY, filter, pageable],
     queryFn: async () => {
       const data = await getAuctions({
         filter: { ...filter },
-        pageable: { page, size, sort },
+        pageable: { ...pageable },
       });
       return data;
     },
@@ -39,15 +33,15 @@ export function useAuctions(options: UseAuctionsOptions) {
 /**
  * Get auctions with filtering and pagination - returns formatted Auction[] array
  */
-export function useAuctions2(options: UseAuctionsOptions) {
-  const { filter, page = 0, size = 10, sort = "timeCreated,DESC" } = options;
+export function useAuctions2(options: AuctionParams) {
+  const { filter, pageable } = options;
 
   return useQuery<Auction[], Error>({
-    queryKey: [AUCTIONS_KEY, filter, page, size, sort],
+    queryKey: [AUCTIONS_KEY, filter, pageable],
     queryFn: async () => {
       const data = await getAuctions({
         filter: { ...filter },
-        pageable: { page, size, sort },
+        pageable: { ...pageable },
       });
 
       const res: Auction[] = data.content.map((item) => ({
@@ -60,7 +54,7 @@ export function useAuctions2(options: UseAuctionsOptions) {
         timeFinalized: item.timeFinalized,
         highestBid: item.highestBid,
         highestBidder: item.highestBidder,
-        auctionStatus: item.auctionStatus,
+        status: item.status,
         timeCreated: item.timeCreated,
         createdAt: item.createdAt,
       }));
@@ -112,7 +106,7 @@ export function useAuctionById2(auctionId: bigint | undefined) {
         timeFinalized: data.timeFinalized,
         highestBid: data.highestBid,
         highestBidder: data.highestBidder,
-        auctionStatus: data.auctionStatus,
+        status: data.status,
         timeCreated: data.timeCreated,
         createdAt: data.createdAt,
       };
@@ -121,4 +115,3 @@ export function useAuctionById2(auctionId: bigint | undefined) {
     enabled,
   });
 }
-

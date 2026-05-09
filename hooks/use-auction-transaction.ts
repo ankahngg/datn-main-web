@@ -6,7 +6,7 @@ import {
   AuctionTransactionResponse,
   AuctionTransaction,
 } from "@/model/AuctionTransaction";
-import { Page } from "@/service/api";
+import { Page, Pageable } from "@/service/api";
 import {
   getAuctionTransactions,
   getAuctionTransactionsByAuctionId,
@@ -16,31 +16,29 @@ import {
 const AUCTION_TRANSACTION_KEY = "auctionTransaction";
 const AUCTION_TRANSACTIONS_KEY = "auctionTransactions";
 
-export interface UseAuctionTransactionsOptions {
+export interface AuctionTransactionParams {
   filter: AuctionTransactionFilter;
-  page?: number;
-  size?: number;
-  sort?: string;
+  pageable?: Pageable;
 }
+
 
 /**
  * Get auction transactions with filtering and pagination - returns raw API response
  */
-export function useAuctionTransactions(options: UseAuctionTransactionsOptions) {
-  const { filter, page = 0, size = 10, sort = "eventTimestamp,DESC" } = options;
+export function useAuctionTransactions(options: AuctionTransactionParams) {
+  const { filter, pageable } = options;
+
 
   const query = useQuery<Page<AuctionTransactionResponse>, Error>({
     queryKey: [
       AUCTION_TRANSACTIONS_KEY,
       filter,
-      page,
-      size,
-      sort,
+      pageable,
     ],
     queryFn: () => {
       return getAuctionTransactions({
         filter,
-        pageable: { page, size, sort },
+        pageable: { ...pageable },
       });
     },
   });
@@ -51,21 +49,19 @@ export function useAuctionTransactions(options: UseAuctionTransactionsOptions) {
 /**
  * Get auction transactions with filtering and pagination - returns formatted AuctionTransaction[] array
  */
-export function useAuctionTransactions2(options: UseAuctionTransactionsOptions) {
-  const { filter, page = 0, size = 10, sort = "eventTimestamp,DESC" } = options;
+export function useAuctionTransactions2(options: AuctionTransactionParams) {
+  const { filter, pageable } = options;
 
   const query = useQuery<AuctionTransaction[], Error>({
     queryKey: [
       AUCTION_TRANSACTIONS_KEY,
       filter,
-      page,
-      size,
-      sort,
+      pageable,
     ],
     queryFn: async () => {
       const data = await getAuctionTransactions({
         filter,
-        pageable: { page, size, sort },
+        pageable: { ...pageable },
       });
 
       const res: AuctionTransaction[] = data.content.map((item) => ({
@@ -115,4 +111,6 @@ export function useAuctionTransactionsByAuctionId(
     enabled,
   });
 }
+
+
 

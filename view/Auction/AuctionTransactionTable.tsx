@@ -1,110 +1,76 @@
+""
 import ActionButton from "@/components/shared/ActionButton";
-import {
-  DataTableCard,
-  DataTableContent,
-  DataTableToolbar,
-  sortableHeader,
-  useDataTableState,
-} from "@/components/shared/data-table";
+import { sortableHeader, useDataTableState, DataTableCard, DataTableToolbar, DataTableContent } from "@/components/shared/data-table";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Auction,
-  AuctionAction,
-  AuctionResponse,
-  AuctionStatusLabelMap,
-  AuctionStatusVariantMap,
-} from "@/model/Auction";
-import {
-  applicationStatusVariantMap,
-  applicationStatusLabelMap,
-} from "@/model/LoanApplication";
-import {
-  LoanTransferActionLabelMap,
-  UserLoanTransfer,
-} from "@/model/LoanTransfer";
+import { DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenu } from "@/components/ui/dropdown-menu";
+import { Auction, AuctionStatusVariantMap, AuctionStatusLabelMap } from "@/model/Auction";
+import { auctionActionLabelMap, AuctionTransaction, AuctionTransactionAction } from "@/model/AuctionTransaction";
+import { transactionStatusLabelMap, transactionStatusVariantMap } from "@/model/BankTransaction";
+import { LoanTransferActionLabelMap } from "@/model/LoanTransfer";
 import { formatUsdc, formatDate, shortAddress } from "@/utils";
-import {
-  ColumnDef,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { WalletCards, XCircle } from "lucide-react";
+import { ColumnDef, useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, getPaginationRowModel } from "@tanstack/react-table";
+import { WalletCards } from "lucide-react";
 
 import { useAccount } from "wagmi";
 
 type Props = {
-  data: Auction[];
-  onAuctionTableAction: (action: AuctionAction, transfer: Auction) => void;
+  data: AuctionTransaction[];
+  onAuctionTransactionAction: (auctionTransactionAction: AuctionTransactionAction, auctionTransaction: AuctionTransaction) => void;
 };
 
-function AuctionTable(props: Props) {
+function AuctionTransactionTable(props : Props) {
   const { address } = useAccount();
-  const { data, onAuctionTableAction } = props;
+  const { data, onAuctionTransactionAction } = props;
 
-  const columns: ColumnDef<Auction>[] = [
+  const columns: ColumnDef<AuctionTransaction>[] = [
     {
-      accessorKey: "auctionId",
-      header: sortableHeader<Auction>("ID"),
+      accessorKey: "id",
+      header: sortableHeader<AuctionTransaction>("ID"),
     },
     {
-      accessorKey: "loanId",
-      header: sortableHeader<Auction>("Khoản vay"),
+      accessorKey: "bidder",
+      header: sortableHeader<AuctionTransaction>("Người đặt giá"),
+        cell: ({ row }) => {
+        return shortAddress(row.original.bidder);
+      }
     },
     {
-      accessorKey: "startPrice",
-      header: sortableHeader<Auction>("Giá khởi điểm"),
+      accessorKey: "bidAmount",
+      header: sortableHeader<AuctionTransaction>("Giá đặt"),
       cell: ({ row }) => {
-        return formatUsdc(row.original.startPrice);
-      },
-    },
-
-    {
-      accessorKey: "timeStart",
-      header: sortableHeader<Auction>("Thời gian bắt đầu"),
-      cell: ({ row }) => {
-        return formatDate(row.original.timeStart);
-      },
-    },
-    {
-      accessorKey: "timeEnd",
-      header: sortableHeader<Auction>("Thời gian kết thúc"),
-      cell: ({ row }) => {
-        return formatDate(row.original.timeEnd);
-      },
-    },
-    {
-      accessorKey: "highestBid",
-      header: sortableHeader<Auction>("Giá cao nhất hiện tại"),
-      cell: ({ row }) => {
-        return formatUsdc(row.original.highestBid);
-      },
-    },
-    {
-      accessorKey: "highestBidder",
-      header: sortableHeader<Auction>("Người đặt giá cao nhất"),
-      cell: ({ row }) => {
-        return shortAddress(row.original.highestBidder);
+        return formatUsdc(row.original.bidAmount);
       },
     },
 
+    {
+      accessorKey: "auctionAction",
+      header: sortableHeader<AuctionTransaction>("Hành động"),
+      cell: ({ row }) => {
+        return auctionActionLabelMap[row.original.auctionAction];
+      },
+    },
+    {
+      accessorKey: "endTime",
+      header: sortableHeader<AuctionTransaction>("Thời gian kết thúc mới"),
+      cell: ({ row }) => {
+        return formatDate(row.original.endTime);
+      },
+    },
+    {
+      accessorKey: "eventTimestamp",
+      header: sortableHeader<AuctionTransaction>("Thời gian đặt"),
+      cell: ({ row }) => {
+        return formatDate(row.original.eventTimestamp);
+      },
+    },
     {
       accessorKey: "status",
-      header: sortableHeader<Auction>("Trạng thái"),
+      header: sortableHeader<AuctionTransaction>("Trạng thái"),
       cell: ({ row }) => {
         const status = row.original.status;
         return (
-          <Badge variant={AuctionStatusVariantMap[status]}>
-            {AuctionStatusLabelMap[status]}
+          <Badge variant={transactionStatusVariantMap[status]}>
+            {transactionStatusLabelMap[status]}
           </Badge>
         );
       },
@@ -112,7 +78,7 @@ function AuctionTable(props: Props) {
     {
       header: "Hành động",
       cell: ({ row }) => {
-        const auction = row.original;
+        const auctionTx = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -126,7 +92,7 @@ function AuctionTable(props: Props) {
                 Hành động
               </DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => onAuctionTableAction("VIEW_DETAILS", auction)}
+                onClick={() => onAuctionTransactionAction("VIEW_DETAILS", auctionTx)}
                 className="cursor-pointer"
               >
                 <WalletCards className="size-4" />
@@ -207,4 +173,4 @@ function AuctionTable(props: Props) {
   );
 }
 
-export default AuctionTable;
+export default AuctionTransactionTable;

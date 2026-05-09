@@ -24,6 +24,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { WalletCards, XCircle } from "lucide-react";
+import { useAccount } from "wagmi";
 
 type Props = {
   data: UserLoanTransfer[];
@@ -32,6 +33,7 @@ type Props = {
 
 
 function TransferApplicationTable(props: Props) {
+  const { address } = useAccount();
   const { 
     data,
     onTransferAction,
@@ -53,6 +55,13 @@ function TransferApplicationTable(props: Props) {
       header: sortableHeader<UserLoanTransfer>("Giá chuyển nhượng"),
       cell: ({ row }) => {
         return formatUsdc(row.original.price);
+      },
+    },
+    {
+      accessorKey: "acceptedPrice",
+      header: sortableHeader<UserLoanTransfer>("Giá chốt chấp nhận"),
+      cell: ({ row }) => {
+        return row.original.acceptedPrice ? formatUsdc(row.original.acceptedPrice) : "-";
       },
     },
     {
@@ -78,7 +87,7 @@ function TransferApplicationTable(props: Props) {
         header: "Hành động",
         cell: ({ row }) => {
           const transfer = row.original;
-          const canCancel = transfer.status === "CREATED";
+          const canCancel = transfer.status === "CREATED" && address?.toLowerCase() === transfer.seller.toLowerCase();
           return (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>

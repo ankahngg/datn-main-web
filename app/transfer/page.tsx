@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAccount } from "wagmi";
-import { HandCoins, Wallet } from "lucide-react";
+import { HandCoins, Search, Wallet } from "lucide-react";
 import WalletRequired from "@/components/wallet-required";
 import PageHeader from "@/components/shared/PageHeader";
 
@@ -10,39 +10,55 @@ import { useGetLoanTransfers2 } from "@/hooks/uset-get-loan-transfer";
 import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
 import { FullScreenError } from "@/components/shared/FullScreenError";
 import TransferApplicationTable from "@/view/Transfer/TransferApplicationTable";
-import { LoanTransferAction, UserLoanTransfer } from "@/model/LoanTransfer";
+import {
+  CreateLoanTransferApplicationSubmit,
+  LoanTransferAction,
+  UserLoanTransfer,
+} from "@/model/LoanTransfer";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useRouter } from "next/navigation";
+import CreateTransferApplicationDialog from "@/view/Transfer/CreateTransferApplicationDialog";
+import { Button } from "@/components/ui/button";
 
 export default function LendingPage() {
-   const router = useRouter();
+  const router = useRouter();
   const { address } = useAccount();
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [selectedLoanTransfer, setSelectedLoanTransfer] = useState<UserLoanTransfer | null>(null);
+  const [createTransferDialogOpen, setCreateTransferDialogOpen] =
+    useState(false);
+  const [selectedLoanTransfer, setSelectedLoanTransfer] =
+    useState<UserLoanTransfer | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(null);
+  const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(
+    null,
+  );
   const [txMessage, setTxMessage] = useState<string | null>(null);
 
-  const {data: userLoanTransfers, isLoading: userLoanTransferIsLoading} = useGetLoanTransfers2({
-    filter: {
-      seller: address,
-    },
-    pageable: {
-      page: 0,
-      size: 100,
-      sort: "timeCreated,DESC",
-    },
-  });
+  const { data: userLoanTransfers, isLoading: userLoanTransferIsLoading } =
+    useGetLoanTransfers2({
+      filter: {
+        seller: address,
+      },
+      pageable: {
+        page: 0,
+        size: 100,
+        sort: "timeCreated,DESC",
+      },
+    });
 
-  if (userLoanTransferIsLoading) 
-    return <FullScreenLoading />;
-  
-  if (!userLoanTransfers) 
-    return <FullScreenError message="Không thể tải dữ liệu chuyển nhượng vay của bạn. Vui lòng thử lại sau." />;
+  if (userLoanTransferIsLoading) return <FullScreenLoading />;
 
-  const handleTableAction = (action: LoanTransferAction, data: UserLoanTransfer) => {
+  if (!userLoanTransfers)
+    return (
+      <FullScreenError message="Không thể tải dữ liệu chuyển nhượng vay của bạn. Vui lòng thử lại sau." />
+    );
+
+  const handleTableAction = (
+    action: LoanTransferAction,
+    data: UserLoanTransfer,
+  ) => {
     setSelectedLoanTransfer(data);
 
     switch (action) {
@@ -57,10 +73,13 @@ export default function LendingPage() {
     }
   };
 
+  const onCreateTransferApplication = (
+    offer: CreateLoanTransferApplicationSubmit,
+  ) => {
+    alert(offer.loanId);
+  };
 
-
-  const handleCancelTransferApplication = () => {
-  }
+  const handleCancelTransferApplication = () => {};
 
   return (
     <WalletRequired
@@ -75,17 +94,36 @@ export default function LendingPage() {
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-sm">
             <Wallet className="size-4" />
-            <span>Danh sách đơn chuyển nhượng vay</span>
+            <span>Danh sách đơn chuyển nhượng vay của bạn</span>
           </div>
 
-          <TransferApplicationTable 
+          <div className="flex flex-wrap gap-2">
+            <CreateTransferApplicationDialog
+              onCreate={onCreateTransferApplication}
+              txMessage={txMessage}
+              txStatus={txStatus}
+              isSubmitting={isSubmitting}
+              open={createTransferDialogOpen}
+              onOpenChange={setCreateTransferDialogOpen}
+              enabled={true}
+            />
+
+            <Button className="my-btn"
+              onClick={() => router.push("/transfer/marketplace")}
+            >
+              <Search className="size-4" />
+              Mua khoản vay
+            </Button>
+          </div>
+
+          <TransferApplicationTable
             data={userLoanTransfers}
             onTransferAction={handleTableAction}
           />
         </section>
 
         {/* // Cancel Transfer Confirmation Dialog */}
-        <ConfirmDialog 
+        <ConfirmDialog
           open={isCancelDialogOpen}
           onOpenChange={setIsCancelDialogOpen}
           title="Xác nhận hủy chuyển nhượng"
@@ -99,7 +137,6 @@ export default function LendingPage() {
         />
 
         {/* // Details Transfer Dialog  */}
-
       </div>
     </WalletRequired>
   );
