@@ -24,9 +24,7 @@ export default function LendingMarketplacePage() {
 		isLoading: isLoadingLoanApplications,
 	} = useUserLoanApplications2({
 		filter: {},
-		page: 0,
-		size: 50,
-		sort: "createdAt,DESC",
+		pageable: { page: 0, size: 1000, sort: "createdAt,DESC" },
 	});
 
 
@@ -37,6 +35,8 @@ export default function LendingMarketplacePage() {
 	if(!userLoanApplications) {
 		return <FullScreenError message={COMMON_ERROR_MESSAGE} />;
 	}
+
+	const filteredApplications = userLoanApplications.filter((app) => app.status === "CREATED" || app.status === "PENDING_CREATED");
 
 	return (
 		<WalletRequired
@@ -57,7 +57,7 @@ export default function LendingMarketplacePage() {
 
 					<LoanApplicationTable
                         title="Danh sách đơn vay đang mở"
-						applications={userLoanApplications}
+						applications={filteredApplications}
 						onViewOffers={(loanId) => router.push(`/borrowing/${loanId}`)}
 						showCancelAction={false}
 						showViewLoanAction={false}

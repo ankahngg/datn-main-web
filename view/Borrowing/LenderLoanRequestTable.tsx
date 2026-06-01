@@ -28,7 +28,7 @@ import {
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
-import { formatUsdc, isNotProcessing, shortAddress } from "@/utils";
+import { formatDate, formatUsdc, isNotProcessing, shortAddress } from "@/utils";
 import { applicationStatusVariantMap, applicationStatusLabelMap, LoanApplication } from "@/model/LoanApplication";
 import { LoanOffer } from "@/model/LoanOffer";
 import { useAccount } from "wagmi";
@@ -103,6 +103,7 @@ export function LenderLoanRequestTable({
       {
         accessorKey: "timeCreated",
         header: sortableHeader<LoanOffer>("Ngày tạo"),
+        cell: ({ row }) => formatDate(row.original.timeCreated),
       },
       {
         id: "actions",
@@ -172,6 +173,7 @@ export function LenderLoanRequestTable({
         pageSize: 5,
       },
     },
+    getRowId: (row) => row.offerId.toString(),
   });
 
   return (

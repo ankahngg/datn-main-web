@@ -9,6 +9,7 @@ import { Page } from "@/service/api";
 import {
   getUserLoanApplications,
   getUserLoanApplicationById,
+  LoanApplicationParams,
 } from "@/service/modules/loan-application";
 import {
   getUserLoanOffers,
@@ -21,23 +22,16 @@ import { useQuery } from "@tanstack/react-query";
 const USER_LOAN_APPLICATIONS_KEY = "userLoanApplications";
 const USER_LOAN_OFFERS_KEY = "userLoanOffers";
 
-export interface UseUserLoanHistoryOptions {
-  filter: LoanFilter; // Define a proper type for the filter based on your API requirements
-  page?: number;
-  size?: number;
-  sort?: string; // e.g. "createdAt,DESC"
-}
-
-export function useUserLoanApplications(options: UseUserLoanHistoryOptions) {
-  const { filter, page = 0, size = 10, sort = "createdAt,DESC" } = options;
+export function useUserLoanApplications(options: LoanApplicationParams) {
+  const { filter, pageable } = options;
   const enabled = Boolean(filter);
 
   const query = useQuery<Page<UserLoanApplicationResponse>, Error>({
-    queryKey: [USER_LOAN_APPLICATIONS_KEY, filter, page, size, sort],
+    queryKey: [USER_LOAN_APPLICATIONS_KEY, filter, pageable],
     queryFn: () => {
       const params = {
         filter: filter ?? {},
-        pageable: { page, size, sort },
+        pageable: pageable,
       };
       return getUserLoanApplications(params);
     },
@@ -47,16 +41,16 @@ export function useUserLoanApplications(options: UseUserLoanHistoryOptions) {
   return query;
 }
 
-export function useUserLoanApplications2(options: UseUserLoanHistoryOptions) {
-  const { filter, page = 0, size = 10, sort = "createdAt,DESC" } = options;
+export function useUserLoanApplications2(options: LoanApplicationParams) {
+  const { filter, pageable } = options;
   const enabled = Boolean(filter);
 
   const query = useQuery<LoanApplication[], Error>({
-    queryKey: [USER_LOAN_APPLICATIONS_KEY, filter, page, size, sort],
+    queryKey: [USER_LOAN_APPLICATIONS_KEY, filter, pageable],
     queryFn: async () => {
       const params = {
         filter: filter ?? {},
-        pageable: { page, size, sort },
+        pageable: pageable,
       };
       const response = await getUserLoanApplications(params);
       return response.content.map((application) => ({
@@ -71,6 +65,7 @@ export function useUserLoanApplications2(options: UseUserLoanHistoryOptions) {
         // NFT fields
         nftId: application.nftId,
         acceptedOfferId: application.acceptedOfferId,
+        acceptedLoanId: application.acceptedLoanId,
         timeAccepted: application.timeAccepted,
         assetName: application.collateralType,
       }));
@@ -81,15 +76,15 @@ export function useUserLoanApplications2(options: UseUserLoanHistoryOptions) {
   return query;
 }
 
-export function useUserLoanOffers(options: UseUserLoanHistoryOptions) {
-  const { filter, page = 0, size = 10, sort = "createdAt,DESC" } = options;
+export function useUserLoanOffers(options: LoanApplicationParams) {
+  const { filter, pageable } = options;
   const query = useQuery<Page<UserLoanOfferResponse>, Error>({
-    queryKey: [USER_LOAN_OFFERS_KEY, filter, page, size, sort],
+    queryKey: [USER_LOAN_OFFERS_KEY, filter, pageable],
     queryFn: () => {
       
       const params = {
         filter,
-        pageable: { page, size, sort },
+        pageable: pageable,
       };
       return getUserLoanOffers(params);
     },
@@ -133,6 +128,7 @@ export function useUserLoanApplicationById2(applicationId: bigint) {
         // NFT fields
         nftId: data.nftId,
         acceptedOfferId: data.acceptedOfferId,
+        acceptedLoanId: data.acceptedLoanId,
         timeAccepted: data.timeAccepted,
         assetName: data.collateralType,
       };
@@ -170,7 +166,7 @@ export function useUserLoanOfferById2(offerId: bigint) {
         id: data.id,
         offerId: data.offerId,
         loanApplicationId: data.applicationId,
-        requester: data.lender,
+        requester: data.requester,
         loanAmount: data.loanAmount,
         interestRate: data.interestRate,
         duration: data.duration,
@@ -215,7 +211,7 @@ export function useLoanOffersByApplicationId2(applicationId: bigint) {
         id: item.id,
         offerId: item.offerId,
         loanApplicationId: item.applicationId,
-        requester: item.lender,
+        requester: item.requester,
         loanAmount: item.loanAmount,
         interestRate: item.interestRate,
         duration: item.duration,

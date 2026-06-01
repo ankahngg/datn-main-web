@@ -91,7 +91,7 @@ export function LoanApplicationTable({
       },
       {
         accessorKey: "collateralAmount",
-        header: sortableHeader<LoanApplication>("Số lượng thế chấp"),
+        header: sortableHeader<LoanApplication>("Số lượng"),
         cell: ({ row }) => {
           const collateralAsset = row.original.collateralType;
           if (collateralAsset === "NFT") 
@@ -115,7 +115,7 @@ export function LoanApplicationTable({
       },
       {
         accessorKey: "timeCreated",
-        header: sortableHeader<LoanApplication>("Ngày tạo"),
+        header: sortableHeader<LoanApplication>("Thời gian"),
       },
       {
         id: "actions",
@@ -123,10 +123,12 @@ export function LoanApplicationTable({
         cell: ({ row }) => {
           const loanApplication = row.original;
           const loanApplicationId = loanApplication.applicationId;
+          const loanId = loanApplication.acceptedLoanId ;
           const offerCount = loanApplication.offerCount || 0;
           const isCreated = loanApplication.status === "CREATED";
           const isAccepted = loanApplication.status === "ACCEPTED";
-          const canViewLoan = showViewLoanAction && isAccepted;
+          const canViewLoan = showViewLoanAction && isAccepted && loanId 
+          console.log("canViewLoan", { showViewLoanAction, isAccepted, loanId })
           const hasActions =
             showViewOffersAction || showCancelAction || canViewLoan;
 
@@ -166,7 +168,7 @@ export function LoanApplicationTable({
                 )}
 
                 {canViewLoan && (
-                  <DropdownMenuItem onClick={() => onViewLoan?.(loanApplicationId)} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => onViewLoan?.(loanId)} className="cursor-pointer">
                     <WalletCards className="size-4" />
                     Xem khoản vay
                   </DropdownMenuItem>

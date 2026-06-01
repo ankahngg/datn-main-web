@@ -1,3 +1,4 @@
+import BeforeAfterCard from "@/components/shared/BeforeAfterCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
@@ -10,6 +11,7 @@ import { formatUsdc } from "@/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
 import { HandCoins } from "lucide-react";
+import { use, useMemo } from "react";
 
 import { Controller, useForm } from "react-hook-form";
 import { parseUnits } from "viem/utils";
@@ -35,6 +37,8 @@ const formSchema = z.object({
 function AuctionTransactionBidDialog(props: Props) {
   const { address } = useAccount();
   const {
+    auction,
+    userBalance,
     onBid,
     txMessage,
     txStatus,
@@ -50,11 +54,38 @@ function AuctionTransactionBidDialog(props: Props) {
       bidAmount: 0,
     },
   });
+  
+  const bidAmountValue = form.watch("bidAmount");
 
-  const submitDisabled = !form.formState.isValid || !!isSubmitting;
+  const bidAmount = useMemo(() => {
+    const parsed = formSchema.shape.bidAmount.safeParse(bidAmountValue);
+    if (!parsed.success) return BigInt(0);
+    return parseUnits(parsed.data.toString(), 6);
+  }, [bidAmountValue]);
+
+  const remainingBalance = useMemo(() => {
+    if (!userBalance.usdcBalance) return BigInt(0);
+    return BigInt(userBalance.usdcBalance) - BigInt(bidAmount);
+  }, [userBalance.usdcBalance, bidAmount]);
+
+  const submitDisabled = !form.formState.isValid || !!isSubmitting || !bidAmount || remainingBalance < BigInt(0);
+
+  const minBidAmount = auction.highestBid ?
+  BigInt(props.auction.highestBid) + BigInt(props.auction.highestBid) / BigInt(20) // Minimum bid is current highest bid + 5%
+  : props.auction.startPrice; // If no bids yet, minimum bid is the starting price
 
   function onSubmit(data: z.output<typeof formSchema>) {
     const res = formSchema.parse(data);
+
+    const bidAmount = parseUnits(res.bidAmount.toString(), 6);
+
+    if(bidAmount < minBidAmount) {
+      form.setError("bidAmount", {
+        type: "manual",
+        message: `Số tiền nhỏ nhất là ${formatUsdc(minBidAmount)}`,
+      });
+      return;
+    }
 
     const submitData: AuctionBidSubmit = {
       auctionId: props.auction.auctionId,
@@ -64,9 +95,6 @@ function AuctionTransactionBidDialog(props: Props) {
     console.log("Submitting create offer with data:", submitData);
     onBid(submitData);
   }
-
-
-  const minBidAmount = props.auction.highestBid + props.auction.highestBid / BigInt(20); // Minimum bid is current highest bid + 5%
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,6 +115,9 @@ function AuctionTransactionBidDialog(props: Props) {
           <DialogDescription className="text-zinc-400">
             <p>
                 Nhập số tiền bạn muốn đặt cho đấu giá này. Số tiền phải lớn hơn 5% giá hiện tại của đấu giá.
+            </p>
+            <p>
+                Bạn sẽ phải ứng trước số tiền, và số tiền này sẽ được hoàn lại nếu có ai đặt giá cao hơn bạn sau đó.
             </p>
           </DialogDescription>
         </DialogHeader>
@@ -113,6 +144,19 @@ function AuctionTransactionBidDialog(props: Props) {
                 )}
               </Field>
             )}
+          />
+
+          <BeforeAfterCard 
+            beforeLabel="Số dư hiện tại"
+            beforeValue={formatUsdc(props.userBalance.usdcBalance)}
+            changeLabel="Số tiền đặt"
+            changeValue={formatUsdc(bidAmount)}
+            afterLabel="Số dư sau khi đặt"
+            afterValue={
+              remainingBalance < BigInt(0) ? "Không đủ tiền" : formatUsdc(remainingBalance)
+            }
+            currency="USDC"
+            type="decrease"
           />
 
           <DialogFooter className="bg-background text-foreground">

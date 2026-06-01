@@ -3,18 +3,26 @@
 import { useAccount } from "wagmi";
 import { formatUnits } from "viem";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DetailCard } from "@/components/shared/DetailCard";
 import { useUserBalance } from "@/hooks/use-user-asset";
 
 import { shortAddress } from "@/utils";
 import { UserLoanResponse } from "@/model/Loan";
+import BeforeAfterCard from "@/components/shared/BeforeAfterCard";
+import clsx from "clsx";
 
 type EndLoanDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   loan: UserLoanResponse | null;
-  onConfirm: () => Promise<void> | void;
+  onConfirm: (amount: bigint) => void | Promise<void>;
   isSubmitting?: boolean;
   txStatus?: "idle" | "success" | "error" | null;
   txMessage?: string | null;
@@ -36,10 +44,8 @@ export function EndLoanDialog({
 
   const amountRemainingUnits = loan.totalAmountHaveToPay - loan.amountPaid;
   const userBalanceUnits = userBalance?.usdcBalance ?? BigInt(0);
-  const hasEnoughBalance = userBalanceUnits >= amountRemainingUnits;
-  const remainingBalanceAfterPaymentUnits = hasEnoughBalance
-    ? userBalanceUnits - amountRemainingUnits
-    : BigInt(0);
+  const remainingBalanceAfterPaymentUnits =
+    userBalanceUnits - amountRemainingUnits;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,28 +92,39 @@ export function EndLoanDialog({
           </section>
 
           <section>
-            <DetailCard
-              label="Số dư USDC của bạn"
-              value={`${formatUnits(userBalanceUnits, 6)} USDC`}
-              valueClassName="text-lg font-semibold"
-              helperText={`Còn lại sau khi trả: ${formatUnits(remainingBalanceAfterPaymentUnits, 6)} USDC`}
-              helperClassName="text-sm"
+            <BeforeAfterCard
+              beforeLabel="Số dư USDC của bạn"
+              beforeValue={`${formatUnits(userBalanceUnits, 6)}`}
+              changeLabel="Số USDC phải trả"
+              changeValue={`${formatUnits(amountRemainingUnits, 6)}`}
+              type="decrease"
+              afterLabel="Số dư USDC còn lại "
+              afterValue={
+                remainingBalanceAfterPaymentUnits < 0
+                  ? "Không đủ"
+                  : `${formatUnits(remainingBalanceAfterPaymentUnits, 6)}`
+              }
+              currency="USDC"
             />
           </section>
 
-          {txStatus === "error" && txMessage && (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">
-              {txMessage}
-            </div>
-          )}
-          {txStatus === "success" && txMessage && (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
-              {txMessage}
-            </div>
-          )}
-
           <DialogFooter className="pt-2 bg-background text-foreground">
-            <Button onClick={onConfirm} disabled={isSubmitting || !hasEnoughBalance} className="my-btn">
+            {txMessage && (
+              <p
+                className={clsx(
+                  "mr-auto text-sm",
+                  txStatus === "success" && "text-emerald-400",
+                  txStatus === "error" && "text-red-400",
+                )}
+              >
+                {txMessage}
+              </p>
+            )}
+            <Button
+              onClick={() => onConfirm(amountRemainingUnits)}
+              disabled={isSubmitting}
+              className="my-btn"
+            >
               {isSubmitting ? "Đang xử lý..." : "Kết thúc khoản vay"}
             </Button>
           </DialogFooter>

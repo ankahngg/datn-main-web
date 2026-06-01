@@ -86,7 +86,7 @@ function AuctionTable(props: Props) {
       accessorKey: "highestBid",
       header: sortableHeader<Auction>("Giá cao nhất hiện tại"),
       cell: ({ row }) => {
-        return formatUsdc(row.original.highestBid);
+        return row.original.highestBid ? formatUsdc(row.original.highestBid) : "-";
       },
     },
     {

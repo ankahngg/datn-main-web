@@ -34,7 +34,7 @@ import {
   LoanApplication,
 } from "@/model/LoanApplication";
 import { LoanOffer } from "@/model/LoanOffer";
-import { formatUsdc, isNotProcessing } from "@/utils";
+import { formatDate, formatUsdc, isNotProcessing } from "@/utils";
 import { useAccount } from "wagmi";
 
 type BorrowerLoanRequestTableProps = {
@@ -103,6 +103,7 @@ export function BorrowerLoanRequestTable({
       {
         accessorKey: "timeCreated",
         header: sortableHeader<LoanOffer>("Ngày tạo"),
+        cell: ({ row }) => formatDate(row.original.timeCreated),
       },
       {
         id: "actions",
@@ -182,6 +183,7 @@ export function BorrowerLoanRequestTable({
         pageSize: 5,
       },
     },
+    getRowId: (row) => row.offerId.toString(),
   });
 
   return (

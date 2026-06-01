@@ -8,12 +8,12 @@ export type UserLoanTransferResponse = {
   seller: string;
   buyer?: string;
   price: bigint;
+    acceptedOfferId?: bigint;
   status: ApplicationStatusResponse;
   timeCreated: string;
   timeCancelled?: string;
   timeAccepted?: string;
   acceptedPrice?: bigint;
-  
 };
 
 export type UserLoanTransfer = {
@@ -23,6 +23,7 @@ export type UserLoanTransfer = {
     seller: string; 
     buyer?: string;
     price: bigint;
+    acceptedOfferId?: bigint;
     status: ApplicationStatusResponse;
     timeCreated: string;
     timeCancelled?: string;
@@ -42,6 +43,7 @@ export type LoanTransferFilter = {
 export const LOAN_TRANSFER_ACTIONS = [
   "VIEW_DETAILS",
   "CANCEL_TRANSFER",
+  "UPDATE_PRICE",
 ] as const;
 
 export type LoanTransferAction = typeof LOAN_TRANSFER_ACTIONS[number];
@@ -49,6 +51,7 @@ export type LoanTransferAction = typeof LOAN_TRANSFER_ACTIONS[number];
 export const LoanTransferActionLabelMap: Record<LoanTransferAction, string> = {
   VIEW_DETAILS: "Xem chi tiết",
   CANCEL_TRANSFER: "Hủy chuyển nhượng",
+  UPDATE_PRICE: "Cập nhật giá",
 };
 
 export type CreateLoanTransferApplicationSubmit = {

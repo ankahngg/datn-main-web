@@ -53,6 +53,9 @@ function TransferOfferTable(props: Props) {
     {
       accessorKey: "requester",
       header: sortableHeader<UserLoanTransferOffer>("Người yêu cầu"),
+      cell: ({ row }) => {
+        return shortAddress(row.original.requester);
+      },
     },
     {
       accessorKey: "price",

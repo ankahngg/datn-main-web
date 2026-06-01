@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +49,7 @@ export function RepaymentDetailsDialog({ open, onOpenChange, loan }: RepaymentDe
             />
           </section>
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 ">
             <DetailCard label="Số tiền vay" value={`${formatUsdc(loan.loanAmount)} USDC`} />
             <DetailCard label="Lãi suất" value={`${loan.interestRate}%`} />
             <DetailCard label="Thời hạn" value={`${loan.duration} tháng`} />
@@ -69,14 +68,14 @@ export function RepaymentDetailsDialog({ open, onOpenChange, loan }: RepaymentDe
             <DetailCard label="Ngày đến hạn" value={formatDate(endDate)} />
           </section>
 
-          <section className="rounded-xl border border-border bg-sidebar/80 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <section className="rounded-xl border border-border ">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-sidebar/80 p-4 rounded-xl">
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Trạng thái khoản vay</p>
-                <p className="mt-1 text-sm text-foreground">{UserLoanStatusLabelMap[loan.loanStatus]}</p>
+                <p className="mt-1 text-sm text-foreground">{UserLoanStatusLabelMap[loan.status]}</p>
               </div>
-              <Badge variant={UserLoanStatusVariantMap[loan.loanStatus]}>
-                {UserLoanStatusLabelMap[loan.loanStatus]}
+              <Badge variant={UserLoanStatusVariantMap[loan.status]}>
+                {UserLoanStatusLabelMap[loan.status]}
               </Badge>
             </div>
 

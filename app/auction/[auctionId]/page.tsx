@@ -23,6 +23,7 @@ import {
 } from "@/model/Auction";
 import {
   AuctionBidSubmit,
+  AuctionFinalizeSubmit,
   AuctionTransaction,
   AuctionTransactionAction,
 } from "@/model/AuctionTransaction";
@@ -31,16 +32,20 @@ import AuctionTransactionBidDialog from "@/view/Auction/AuctionTransactionBidDia
 import AuctionTransactionTable from "@/view/Auction/AuctionTransactionTable";
 import { FinalizeAuctionDialog } from "@/view/Auction/FinalizeAuctionDialog";
 import { Wallet } from "lucide-react";
+import abiData from "@/abi.json";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useWriteContract } from "wagmi";
 import { fi } from "zod/v4/locales";
+import { contractAddress } from "@/config/app.config";
 
 function Page() {
   const { address } = useAccount();
   const params = useParams<{ auctionId: string }>();
   const auctionId = BigInt(params.auctionId);
+  const router = useRouter();
+  const { writeContractAsync } = useWriteContract();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(
@@ -89,16 +94,68 @@ function Page() {
     }
   }
 
-  function onBid(submitData: AuctionBidSubmit) {
-    // Gọi API để thực hiện đặt giá
-    alert(
-      `Đặt giá ${formatUsdc(submitData.bidAmount)} cho đấu giá #${submitData.auctionId}`,
-    );
+  async function onBid(submitData: AuctionBidSubmit) {
+    if (!address) {
+      console.warn("Wallet is not connected");
+      setTxStatus("error");
+      setTxMessage("Wallet is not connected");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+
+    try {
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "bid",
+        args: [submitData.auctionId, submitData.bidAmount],
+      });
+
+      setTxStatus("success");
+      setTxMessage("Đặt giá thành công");
+    } catch (error: any) {
+      console.error("Error placing bid:", error);
+      setTxStatus("error");
+      setTxMessage( "Có lỗi xảy ra khi đặt giá");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function onFinalize() {
-    // Gọi API để chốt đấu giá
-    alert(`Chốt đấu giá #${auction?.auctionId}`);
+  async function onFinalize(submitData : AuctionFinalizeSubmit) {
+    if (!address) {
+      console.warn("Wallet is not connected");
+      setTxStatus("error");
+      setTxMessage("Wallet is not connected");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+
+    try {
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "finalizeAuction",
+        args: [submitData.auctionId],
+      });
+
+      setTxStatus("success");
+      setTxMessage("Chốt đấu giá thành công");
+    }
+      catch (error: any) {  
+      console.error("Error finalizing auction:", error);
+      setTxStatus("error");
+      setTxMessage("Có lỗi xảy ra khi chốt đấu giá");
+    }
+    finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -118,16 +175,34 @@ function Page() {
             <DetailCard
               label="Người trả giá cao nhất"
               value={auction.highestBidder || "Chưa có người mua"}
-              className="col-span-4"
-            />
-            <DetailCard label="Khoản vay đấu giá" value={auction.loanId} />
-            <DetailCard
-              label="Giá khởi điểm"
-              value={formatUsdc(auction.startPrice)}
+              className="col-span-4 detail-card-bg"
             />
             <DetailCard
               label="Giá cao nhất hiện tại"
               value={formatUsdc(auction.highestBid)}
+              className="detail-card-bg col-span-4 "
+            />
+            <DetailCard
+              label="Khoản vay đấu giá"
+              value={
+                <div className="flex gap-4 items-center">
+                  <div>ID #{auction.loanId}</div>
+                  <Button
+                    className="text-sm text-muted-foreground italic underline hover:text-foreground bg-transparent border-0 p-0"
+                    onClick={() =>
+                      router.push(`/payment/history/${auction.loanId}`)
+                    }
+                  >
+                    Xem khoản vay
+                  </Button>
+                </div>
+              }
+              className="detail-card-bg"
+            />
+            <DetailCard
+              label="Giá khởi điểm"
+              value={formatUsdc(auction.startPrice)}
+              className="detail-card-bg"
             />
 
             <DetailCard
@@ -137,18 +212,22 @@ function Page() {
                   {AuctionStatusLabelMap[auction.status]}
                 </Badge>
               }
+              className="detail-card-bg"
             />
             <DetailCard
               label="Thời gian bắt đầu"
               value={formatDate(auction.timeStart)}
+              className="detail-card-bg"
             />
             <DetailCard
-              label="Thời gian kết thúc"
+              label="Thời gian dự kiến kết thúc"
               value={formatDate(auction.timeEnd)}
+              className="detail-card-bg"
             />
             <DetailCard
               label="Thời gian kết thúc"
               value={formatDate(auction.timeFinalized)}
+              className="detail-card-bg"
             />
           </CardContent>
 
@@ -166,7 +245,7 @@ function Page() {
             />
             {auction.timeEnd &&
               new Date() > new Date(auction.timeEnd) &&
-              auction.status == "CREATED" && (
+              auction.status == "CREATED" || true && (
                 <Button
                   className="my-btn"
                   onClick={() => setOpenFinalizeDialog(true)}

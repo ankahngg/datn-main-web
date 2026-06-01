@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, History, MoreHorizontal } from "lucide-react";
+import { Eye, History, MoreHorizontal, NotepadText, Scale } from "lucide-react";
 import {
   type ColumnDef,
   getCoreRowModel,
@@ -80,7 +80,7 @@ export function LenderLoanTable({ loans, isLoading = false, onAction }: LendingT
         accessorKey: "loanStatus",
         header: sortableHeader<UserLoan>("Trạng thái"),
         cell: ({ row }) => {
-          const status = row.original.loanStatus;
+          const status = row.original.status;
           return <Badge variant={UserLoanStatusVariantMap[status]}>{UserLoanStatusLabelMap[status]}</Badge>;
         },
       },
@@ -122,6 +122,15 @@ export function LenderLoanTable({ loans, isLoading = false, onAction }: LendingT
                 <DropdownMenuItem onClick={() => onAction("VIEW_HISTORY", loan)} className="cursor-pointer">
                   <History className="size-4" />
                   Xem lịch sử vay
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAction("VIEW_APPLICATION", loan)} className="cursor-pointer">
+                  <NotepadText className="size-4"/>
+                  Xem đơn vay
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAction("START_AUCTION", loan)} className="cursor-pointer"
+                  variant="destructive">
+                  <Scale className="size-4"/>
+                  Đấu giá khoản vay
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

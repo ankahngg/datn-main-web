@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { HandCoins, Search, Wallet } from "lucide-react";
 import WalletRequired from "@/components/wallet-required";
 import PageHeader from "@/components/shared/PageHeader";
-
+import abiData from "@/abi.json";
 import { useGetLoanTransfers2 } from "@/hooks/uset-get-loan-transfer";
 import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
 import { FullScreenError } from "@/components/shared/FullScreenError";
 import TransferApplicationTable from "@/view/Transfer/TransferApplicationTable";
+import bankNFTAbi from "@/bankNFTAbi.json";
 import {
   CreateLoanTransferApplicationSubmit,
   LoanTransferAction,
@@ -19,14 +20,22 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useRouter } from "next/navigation";
 import CreateTransferApplicationDialog from "@/view/Transfer/CreateTransferApplicationDialog";
 import { Button } from "@/components/ui/button";
+import { bankNFTAddress, contractAddress } from "@/config/app.config";
+import UpdateTransferPriceDialog from "@/view/Transfer/UpdateTransferPriceDialog";
+import { UpdateLoanTransferPriceSubmitValues } from "@/model/LoanTransferOffer";
 
-export default function LendingPage() {
+export default function LoanTransferPage() {
   const router = useRouter();
   const { address } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [createTransferDialogOpen, setCreateTransferDialogOpen] =
     useState(false);
+
+  const [updatePriceDialogOpen, setUpdatePriceDialogOpen] = useState(false);
+
   const [selectedLoanTransfer, setSelectedLoanTransfer] =
     useState<UserLoanTransfer | null>(null);
 
@@ -50,7 +59,7 @@ export default function LendingPage() {
 
   if (userLoanTransferIsLoading) return <FullScreenLoading />;
 
-  if (!userLoanTransfers)
+  if (!userLoanTransfers || !publicClient)
     return (
       <FullScreenError message="Không thể tải dữ liệu chuyển nhượng vay của bạn. Vui lòng thử lại sau." />
     );
@@ -70,13 +79,88 @@ export default function LendingPage() {
       case "CANCEL_TRANSFER":
         setIsCancelDialogOpen(true);
         break;
+      case "UPDATE_PRICE":
+        setUpdatePriceDialogOpen(true);
+        break;
     }
   };
 
-  const onCreateTransferApplication = (
-    offer: CreateLoanTransferApplicationSubmit,
+  const onCreateTransferApplication = async (
+    data: CreateLoanTransferApplicationSubmit,
   ) => {
-    alert(offer.loanId);
+    if (!address) {
+      console.warn("Wallet is not connected");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+
+    try {
+      const approvedAddress = await publicClient.readContract({
+        address: bankNFTAddress as `0x${string}`,
+        abi: bankNFTAbi.abi,
+        functionName: "getApproved",
+        args: [BigInt(data.loanId)],
+      }) as `0x${string}`; 
+
+      if (approvedAddress.toLowerCase() !== contractAddress.toLowerCase()) {
+        await writeContractAsync({
+          address: bankNFTAddress as `0x${string}`,
+          abi: bankNFTAbi.abi,
+          functionName: "approve",
+          args: [contractAddress, BigInt(data.loanId)],
+        });
+      }
+
+      // Call API to create transfer application
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "createLoanTransferApplication",
+        args: [data.loanId, data.price],
+      });
+      setTxStatus("success");
+      setTxMessage("Tạo đơn chuyển nhượng thành công!");
+    } catch (error) {
+      setTxStatus("error");
+      setTxMessage("Lỗi: Không thể tạo đơn chuyển nhượng");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onUpdateTransferPrice = async (
+    data: UpdateLoanTransferPriceSubmitValues,
+  ) => {
+    if (!address) {
+      console.warn("Wallet is not connected");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+
+    try {
+      // Call API to update transfer price
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "updateLoanTransferApplication",
+        args: [data.transferId, data.newPrice],
+      });
+      setTxStatus("success");
+      setTxMessage("Cập nhật giá chuyển nhượng thành công!");
+    } catch (error) {
+      setTxStatus("error");
+      setTxMessage("Lỗi: Không thể cập nhật giá chuyển nhượng");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancelTransferApplication = () => {};
@@ -108,7 +192,8 @@ export default function LendingPage() {
               enabled={true}
             />
 
-            <Button className="my-btn"
+            <Button
+              className="my-btn"
               onClick={() => router.push("/transfer/marketplace")}
             >
               <Search className="size-4" />
@@ -135,6 +220,18 @@ export default function LendingPage() {
             handleCancelTransferApplication();
           }}
         />
+
+        {selectedLoanTransfer && (
+          <UpdateTransferPriceDialog
+            open={updatePriceDialogOpen}
+            onOpenChange={setUpdatePriceDialogOpen}
+            transferApplication={selectedLoanTransfer}
+            txMessage={txMessage}
+            txStatus={txStatus}
+            isSubmitting={isSubmitting}
+            onUpdate={onUpdateTransferPrice}
+          />
+        )}
 
         {/* // Details Transfer Dialog  */}
       </div>

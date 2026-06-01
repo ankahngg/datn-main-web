@@ -18,7 +18,7 @@ type Props = {
   onAuctionTransactionAction: (auctionTransactionAction: AuctionTransactionAction, auctionTransaction: AuctionTransaction) => void;
 };
 
-function AuctionTransactionTable(props : Props) {
+function  AuctionTransactionTable(props : Props) {
   const { address } = useAccount();
   const { data, onAuctionTransactionAction } = props;
 

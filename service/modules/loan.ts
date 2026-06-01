@@ -23,7 +23,7 @@ export async function getLoans({
   }
 
   const data = await request<Page<UserLoanResponse>>({
-    path: "/api/v1/user-loans",
+    path: "/api/v1/loans",
     method: "GET",
     query: {
       ...filter,
@@ -44,7 +44,7 @@ export async function getLoanById(loanId: bigint): Promise<UserLoanResponse> {
     return val;
   }
   const data = await request<UserLoanResponse>({
-      path : `/api/v1/user-loans/${loanId}`,
+      path : `/api/v1/loans/${loanId}`,
       method: "GET",
   });
   return data;

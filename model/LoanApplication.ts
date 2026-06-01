@@ -14,6 +14,7 @@ export interface UserLoanApplicationResponse {
   timeCreated: string;
   createdAt: string;
   acceptedOfferId?: bigint;
+  acceptedLoanId?: bigint;
   offerCount?: number; // Số lượng offer đã được tạo cho đơn vay này
   status: ApplicationStatusResponse;
 }
@@ -43,6 +44,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
       timeCreated: "2024-03-01T12:00:00Z",
       createdAt: "2024-03-01T12:00:00Z",
       acceptedOfferId: BigInt("2001"),
+      acceptedLoanId: BigInt("3001"),
       offerCount: 1,
     },
     {
@@ -107,6 +109,7 @@ export const applicationStatusVariantMap: Record<ApplicationStatusResponse, "war
   ACCEPTED: "success",
   PENDING_CANCELED: "warning",
   CANCELED: "danger",
+  PENDING_UPDATED: "warning",
 };
 
 export const applicationStatusLabelMap: Record<ApplicationStatusResponse, string> = {
@@ -116,6 +119,7 @@ export const applicationStatusLabelMap: Record<ApplicationStatusResponse, string
   CANCELED: "Đã hủy",
   PENDING_ACCEPTED: "Đang chấp nhận",
   ACCEPTED: "Đã chấp nhận",
+  PENDING_UPDATED: "Đang cập nhật",
 };
 
 export type LoanApplication = {
@@ -126,6 +130,7 @@ export type LoanApplication = {
   collateralAmount: bigint;
   nftId?: bigint;
   acceptedOfferId?: bigint;
+  acceptedLoanId?: bigint;
   timeCancelled ?: string;
   timeAccepted  ?: string;
   timeCreated : string;
@@ -157,7 +162,7 @@ export type LoanApplicationSubmitValues = {
   collateralAmount: number;
   selectedNftId?: number;
   selectedNftAddress?: string;
-  selectedNftTokenId?: string;
+  selectedNftTokenId?: bigint;
   selectedNftName?: string;
   loanAmountUsdc: number;
   monthlyInterestRate: number;

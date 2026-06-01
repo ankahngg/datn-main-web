@@ -8,32 +8,24 @@ import {
   getBankTransactions,
 } from "@/service/modules/bank-transaction";
 import { Page } from "@/service/api";
-import { BankTransactionFilter, BankTransactionResponse } from "@/model/BankTransaction";
+import { BankTransactionFilter, BankTransactionResponse, BankTransaction } from "@/model/BankTransaction";
 
 const BANK_TRANSACTION_HISTORY_KEY = "bankTransactionHistory";
 
-export interface UseBankTransactionsOptions {
-  filter: BankTransactionFilter;
-  page?: number;
-  size?: number;
-  sort?: string; // e.g. "createdAt,DESC"
-}
 
-export function useBankTransactions(options: UseBankTransactionsOptions) {
-  const { filter, page = 0, size = 10, sort = "createdAt,DESC" } = options;
+export function useBankTransactions(options: BankTransactionHistoryParams) {
+  const { filter, pageable } = options;
 
   const query = useQuery<Page<BankTransactionResponse>, Error>({
     queryKey: [
       BANK_TRANSACTION_HISTORY_KEY,
       filter,
-      page,
-      size,
-      sort,
+      pageable,
     ],
     queryFn: () => {
       const params: BankTransactionHistoryParams = {
         filter,
-        pageable: { page, size, sort },
+        pageable
       };
 
       return getBankTransactions(params);
@@ -42,3 +34,40 @@ export function useBankTransactions(options: UseBankTransactionsOptions) {
 
   return query;
 }
+
+export function useBankTransactions2(options: BankTransactionHistoryParams) {
+  const { filter, pageable } = options;
+
+  const query = useQuery<BankTransaction[], Error>({
+    queryKey: [
+      BANK_TRANSACTION_HISTORY_KEY,
+      filter,
+      pageable,
+    ],
+    queryFn: async () => {
+      const params: BankTransactionHistoryParams = {
+        filter,
+        pageable
+      };
+
+      const data = await getBankTransactions(params);
+      return data.content.map((tx) => ({
+        id: tx.id,
+        type: tx.bankAction,
+        asset: tx.bankAsset,
+        amount: tx.amount,
+        time: tx.createdAt,
+        status: tx.status,
+        txHash: tx.txHash,
+        blockNumber: tx.blockNumber,
+        logIndex: tx.logIndex,
+        eventTimestamp: tx.eventTimestamp,
+        createdAt: tx.createdAt,
+      }));
+    }
+        
+  });
+
+  return query;
+}
+

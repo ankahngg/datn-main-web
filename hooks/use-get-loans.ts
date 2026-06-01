@@ -3,24 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Page } from "@/service/api";
 import { LoanFilter, UserLoan, UserLoanResponse } from "@/model/Loan";
-import { getLoanById, getLoans } from "@/service/modules/loan";
+import { getLoanById, getLoans, LoanParams } from "@/service/modules/loan";
 
-export interface UseGetLoansOptions {
-  filter: LoanFilter;
-  page?: number;
-  size?: number;
-  sort?: string;
-}
 
-export function useGetLoans(options: UseGetLoansOptions) {
-  const { filter, page = 0, size = 1000, sort = "timeCreated,DESC" } = options;
+
+export function useGetLoans(options: LoanParams) {
+  const { filter, pageable } = options;
  
   return useQuery<Page<UserLoanResponse>, Error>({
-    queryKey: ["useGetLoan", filter, page, size, sort],
+    queryKey: ["useGetLoan", filter, pageable],
     queryFn: async () => {
       const data = await getLoans({
         filter: { ...filter },
-        pageable: { page, size, sort },
+        pageable: { ...pageable },
       });
 
       return data;
@@ -28,15 +23,15 @@ export function useGetLoans(options: UseGetLoansOptions) {
   });
 }
 
-export function useGetLoans2(options: UseGetLoansOptions) {
-  const { filter, page = 0, size = 1000, sort = "timeCreated,DESC" } = options;
+export function useGetLoans2(options: LoanParams) {
+  const { filter, pageable } = options;
  
   return useQuery<UserLoan[], Error>({
-    queryKey: ["useGetLoan", page, size, sort],
+    queryKey: ["useGetLoan", filter, pageable],
     queryFn: async () => {
       const data = await getLoans({
         filter: { ...filter },
-        pageable: { page, size, sort },
+        pageable: { ...pageable },
       });
 
         const res: UserLoan[] = data.content.map((item) => ({
@@ -51,7 +46,7 @@ export function useGetLoans2(options: UseGetLoansOptions) {
           duration: item.duration,
           totalAmountHaveToPay: item.totalAmountHaveToPay,
           amountPaid: item.amountPaid,
-          loanStatus: item.loanStatus,
+          status: item.status,
           timePaid: item.timePaid,
           timeAuction: item.timeAuction,
           timeLiquidated: item.timeLiquidated,
@@ -67,7 +62,7 @@ export function useGetLoans2(options: UseGetLoansOptions) {
 
 export function useGetLoanById(loanId: bigint | undefined) {
   return useQuery<UserLoanResponse, Error>({
-    queryKey: ["useGetLoanById", loanId],
+    queryKey: ["useGetLoanById", loanId?.toString()],
     queryFn: async () => {
       if (!loanId) {
         throw new Error("Loan ID is required");
@@ -81,7 +76,7 @@ export function useGetLoanById(loanId: bigint | undefined) {
 
 export function useGetLoanById2(loanId: bigint | undefined) {
   return useQuery<UserLoan, Error>({
-    queryKey: ["useGetLoanById", loanId],
+    queryKey: ["useGetLoanById", loanId?.toString()],
     queryFn: async () => {
       if (!loanId) {
         throw new Error("Loan ID is required");
@@ -99,7 +94,7 @@ export function useGetLoanById2(loanId: bigint | undefined) {
         duration: data.duration,
         totalAmountHaveToPay: data.totalAmountHaveToPay,
         amountPaid: data.amountPaid,
-        loanStatus: data.loanStatus,
+        status: data.status,
         timePaid: data.timePaid,
         timeAuction: data.timeAuction,
         timeLiquidated: data.timeLiquidated,

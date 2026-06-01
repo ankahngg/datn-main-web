@@ -1,36 +1,39 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { parseUnits } from "viem";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { DetailCard } from "@/components/shared/DetailCard";
 import { useUserBalance } from "@/hooks/use-user-asset";
 import { formatUsdc } from "@/utils";
 import { UserLoanResponse } from "@/model/Loan";
 import BeforeAfterCard from "@/components/shared/BeforeAfterCard";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { UserBalance } from "@/model/User";
+import clsx from "clsx";
 
 const repaymentSchema = z.object({
-  amount: z
-    .string()
-    .trim()
-    .min(1, "Vui lòng nhập số tiền")
-    .refine((value) => !Number.isNaN(Number(value.replace(/,/g, "."))), "Số tiền không hợp lệ")
-    .refine((value) => {
-      try {
-        parseUnits(value.replace(/,/g, "."), 6);
-        return true;
-      } catch {
-        return false;
-      }
-    }, "Số tiền không hợp lệ")
-    .refine((value) => Number(value.replace(/,/g, ".")) > 0, "Số tiền phải lớn hơn 0"),
+  amount: z.coerce.number().min(0, "Giá phải lớn hơn hoặc bằng 0"),
 });
 
 type RepaymentFormValues = z.infer<typeof repaymentSchema>;
@@ -38,62 +41,67 @@ type RepaymentFormValues = z.infer<typeof repaymentSchema>;
 type RepaymentDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  loan: UserLoanResponse | null;
-  onConfirm: (amount: string) => Promise<void> | void;
+  loan: UserLoanResponse;
+  userBalance: UserBalance;
+  onConfirm: (amount: bigint) => Promise<void> | void;
   isSubmitting?: boolean;
   txStatus?: "idle" | "success" | "error" | null;
   txMessage?: string | null;
 };
 
-
 export function RepaymentDialog({
   open,
   onOpenChange,
   loan,
+  userBalance,
   onConfirm,
   isSubmitting = false,
   txStatus = "idle",
   txMessage,
 }: RepaymentDialogProps) {
   const { address } = useAccount();
-  const { data: userBalance } = useUserBalance(address);
 
-  const form = useForm<RepaymentFormValues>({
+  const form = useForm<z.input<typeof repaymentSchema>>({
     resolver: zodResolver(repaymentSchema),
-    defaultValues: { amount: "" },
+    defaultValues: { amount: 0 },
     mode: "onChange",
   });
 
-  useEffect(() => {
-    if (!open) {
-      form.reset({ amount: "" });
-    }
-  }, [form, open]);
-
-  if (!loan || !userBalance) return null;
-
   const amountRemainingUnits = loan.totalAmountHaveToPay - loan.amountPaid;
-  const userBalanceUnits = userBalance.usdcBalance;
+  const userUsdcBalance = userBalance.usdcBalance;
 
+  
   const watchAmount = form.watch("amount");
-  const normalizedWatchAmount = watchAmount.replace(/,/g, ".").trim();
 
-  let balanceAfterRepayment: bigint | null = null;
-
-  if (normalizedWatchAmount) {
-    try {
-      const amountUnits = parseUnits(normalizedWatchAmount, 6);
-      if (amountUnits <= userBalanceUnits) balanceAfterRepayment = userBalanceUnits - amountUnits;
-      else balanceAfterRepayment = BigInt(0);
-      
-    } catch {
-      balanceAfterRepayment = null;
+  const amount = useMemo(() => {
+    const parsed = repaymentSchema.shape.amount.safeParse(watchAmount);
+    if (parsed.success) {
+      return parsed.data;
     }
-  }
+    return null;
+  }, [watchAmount]);
 
-  const onSubmit = async (values: RepaymentFormValues) => {
-    const normalizedAmount = values.amount.replace(/,/g, ".");
-    const amountUnits = parseUnits(normalizedAmount, 6);
+  const remainingBalance = useMemo(() => {
+    if (amount === null) return userUsdcBalance;
+    const remaining =
+      BigInt(userBalance.usdcBalance) - BigInt(parseUnits(amount.toString(), 6));
+    return remaining;
+  } 
+  , [amount, userBalance.usdcBalance]);
+
+  const remainingDebt = useMemo(() => {
+    if (amount === null) return amountRemainingUnits;
+    
+    const remaining = BigInt(amountRemainingUnits) - BigInt(parseUnits(amount.toString(), 6));
+    return remaining;
+  }, [amount, amountRemainingUnits]);
+
+  const submitDisabled = !form.formState.isValid || !!isSubmitting || amount === null || amount == 0;
+
+  const onSubmit = async (data: z.output<typeof repaymentSchema>) => {
+    const values = repaymentSchema.parse(data);
+
+    const amountUnits = parseUnits(values.amount.toString(), 6);
 
     if (amountUnits > amountRemainingUnits) {
       form.setError("amount", {
@@ -102,14 +110,14 @@ export function RepaymentDialog({
       return;
     }
 
-    if (amountUnits > userBalanceUnits) {
+    if (amountUnits > userUsdcBalance) {
       form.setError("amount", {
         message: "Số dư USDC không đủ",
       });
       return;
     }
 
-    await onConfirm(normalizedAmount);
+    await onConfirm(amountUnits);
   };
 
   return (
@@ -131,7 +139,6 @@ export function RepaymentDialog({
             <DetailCard
               label="Số tiền vay"
               value={`${formatUsdc(loan.loanAmount)} USDC`}
-          
               helperText={`Tổng phải trả: ${formatUsdc(loan.totalAmountHaveToPay)} USDC`}
             />
             <DetailCard
@@ -160,43 +167,58 @@ export function RepaymentDialog({
             />
           </section> */}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Số tiền thanh toán</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0"
-                        inputMode="decimal"
-                        disabled={isSubmitting}
-                        className="bg-background text-foreground"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form
+            onSubmit={form.handleSubmit(onSubmit as any)}
+            className="space-y-4"
+          >
+            <Controller
+              name="amount"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Số tiền trả</FieldLabel>
+                  <Input
+                    {...field}
+                    value={field.value as any}
+                    onChange={
+                      (e) => {
+                        const value = e.target.value;
+                        const result = repaymentSchema.shape.amount.safeParse(value);
 
-            <BeforeAfterCard 
-                beforeLabel="Số dư hiện tại"
-                beforeValue={formatUsdc(userBalanceUnits)}
-                changeLabel="Số tiền trả vay"
-                changeValue={watchAmount ? `${normalizedWatchAmount}` : ""}
-                afterLabel="Số dư sau khi trả vay"
-                afterValue={balanceAfterRepayment !== null ? `${formatUsdc(balanceAfterRepayment)}` : ""}
-                currency="USDC"
-                type="decrease"
-                afterLabel2="Dư nợ còn lại"
-                afterValue2={watchAmount ? `${formatUsdc(amountRemainingUnits - parseUnits(normalizedWatchAmount, 6))}` : ""} 
-              />
+                        if (result.success) {
+                          field.onChange(value);
+                        }
+                      }
+                    }
 
+                    id="form-rhf-demo-title"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
 
-              {/* <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <BeforeAfterCard
+              beforeLabel="Số dư hiện tại"
+              beforeValue={formatUsdc(userUsdcBalance)}
+              changeLabel="Số tiền trả vay"
+              changeValue={amount || 0}
+              afterLabel="Số dư sau khi trả vay"
+              afterValue={
+                remainingBalance < 0 ? "Không đủ" : formatUsdc(remainingBalance)
+              }
+              currency="USDC"
+              type="decrease"
+              afterLabel2="Dư nợ còn lại"
+              afterValue2={
+                remainingDebt < 0 ? "Quá dư nợ" : formatUsdc(remainingDebt)
+              }
+            />
+
+            {/* <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {quickAmounts.map((item) => (
                   <Button
                     key={item.percentage}
@@ -212,24 +234,23 @@ export function RepaymentDialog({
                 ))}
               </div> */}
 
-              {txStatus === "error" && txMessage && (
-                <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">
-                  {txMessage}
-                </div>
-              )}
-              {txStatus === "success" && txMessage && (
-                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
-                  {txMessage}
-                </div>
-              )}
-
-              <DialogFooter className="pt-2  bg-background text-foreground ">
-                <Button type="submit" disabled={isSubmitting || !watchAmount} className="my-btn">
-                  {isSubmitting ? "Đang xử lý..." : "Trả vay"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            <DialogFooter className="bg-background text-foreground">
+                        {txMessage && (
+                          <p
+                            className={clsx(
+                              "mr-auto text-sm",
+                              txStatus === "success" && "text-emerald-400",
+                              txStatus === "error" && "text-red-400",
+                            )}
+                          >
+                            {txMessage}
+                          </p>
+                        )}
+                        <Button type="submit" disabled={submitDisabled} className="my-btn">
+                          {isSubmitting ? "Đang xử lý..." : "Trả vay"}
+                        </Button>
+                      </DialogFooter>
+          </form>
         </div>
       </DialogContent>
     </Dialog>

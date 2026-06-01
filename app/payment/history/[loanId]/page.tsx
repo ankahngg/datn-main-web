@@ -14,7 +14,7 @@ import { useLoanPayTransactions } from "@/hooks/use-get-loan-pay-transaction";
 import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
 import { UserLoanStatusVariantMap, UserLoanStatusLabelMap } from "@/model/Loan";
 import { useGetLoanById2, useGetLoans, useGetLoans2 } from "@/hooks/use-get-loans";
-import { formatDate, formatUsdc, shortAddress } from "@/utils";
+import { addDateDuration, formatDate, formatUsdc, shortAddress } from "@/utils";
 import { FullScreenError } from "@/components/shared/FullScreenError";
 import { useParams, useRouter } from "next/navigation";
 
@@ -59,15 +59,15 @@ export default function PaymentHistoryContent() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-heading text-foreground">
-              Lịch sử thanh toán
+              Lịch sử thanh toán khoản vay #{loan.loanId.toString()}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Khoản vay: {shortAddress(loan.borrower)} →{" "}
               {shortAddress(loan.lender)}
             </p>
           </div>
-          <Badge variant={UserLoanStatusVariantMap[loan.loanStatus]}>
-            {UserLoanStatusLabelMap[loan.loanStatus]}
+          <Badge variant={UserLoanStatusVariantMap[loan.status]}>
+            {UserLoanStatusLabelMap[loan.status]}
           </Badge>
         </div>
 
@@ -103,7 +103,7 @@ export default function PaymentHistoryContent() {
         </div>
 
         {/* Additional Info */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
           <DetailCard
             label="Lãi suất"
             value={`${loan.interestRate.toString()}%`}
@@ -112,13 +112,19 @@ export default function PaymentHistoryContent() {
           />
           <DetailCard
             label="Thời hạn"
-            value={`${loan.duration.toString()} ngày`}
+            value={`${loan.duration.toString()} tháng`}
             className="detail-card-bg"
             valueClassName="font-medium"
           />
           <DetailCard
             label="Ngày tạo"
             value={formatDate(loan.timeCreated)}
+            className="detail-card-bg"
+            valueClassName="font-medium"
+          />
+          <DetailCard
+            label="Ngày đến hạn"
+            value={formatDate(addDateDuration(loan.timeCreated, loan.duration))}
             className="detail-card-bg"
             valueClassName="font-medium"
           />

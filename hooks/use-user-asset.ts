@@ -5,6 +5,7 @@ import {
   getUserBalance,
   getUserNfts,
   getUserNftsById,
+  UserNftParams,
 } from "@/service/modules/asset";
 import { useQuery } from "@tanstack/react-query";
 
@@ -50,25 +51,45 @@ export function useUserBalance2(address: string | undefined) {
   return query;
 }
 
-export interface UseGetUserNftsOptions {
-  filter: UserNftFilter;
-  page?: number;
-  size?: number;
-  sort?: string;
-}
 
-export function useUserNfts(options: UseGetUserNftsOptions) {
-  const { filter, page = 0, size = 10, sort = "timeCreated,DESC" } = options;
+
+export function useUserNfts(options: UserNftParams) {
+  const { filter, pageable } = options;
   const query = useQuery({
-    queryKey: [USER_ASSET_NFT_KEY, filter, page, size, sort],
+    queryKey: [USER_ASSET_NFT_KEY, filter, pageable],
     queryFn: () => {
       return getUserNfts({
         filter,
-        page,
-        size,
-        sort,
+        pageable,
       });
     },
+  });
+
+  return query;
+}
+
+export function useUserNfts2(options: UserNftParams) {
+  const { filter, pageable } = options;
+  const query = useQuery<UserNft[], Error>({
+    queryKey: [USER_ASSET_NFT_KEY, filter, pageable],
+    queryFn: async () => {
+      const data = await getUserNfts({
+        filter,
+        pageable,
+      });
+      return data.content.map((nft) => ({
+        id: nft.id,
+        nftId: nft.nftId,
+        nftAddress: nft.nftAddress,
+        tokenId: nft.tokenId,
+        name: "NFT#" + nft.tokenId.toString(), // Placeholder name, replace with actual name if available
+        description: "", // Placeholder description
+        collectionName: "", // Placeholder collection name
+        timeCreated: nft.timeCreated,
+        status: nft.status,
+        timeWithdrawn: nft.timeWithdrawn,
+      }));
+    }
   });
 
   return query;

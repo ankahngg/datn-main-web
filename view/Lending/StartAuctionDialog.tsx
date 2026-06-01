@@ -18,70 +18,71 @@ import { LoanOffer } from "@/model/LoanOffer";
 import BeforeAfterCard from "@/components/shared/BeforeAfterCard";
 import { UserBalanceResponse } from "@/model/User";
 import { formatUsdc } from "@/utils";
+import { UserLoan } from "@/model/Loan";
+import { DetailCard } from "@/components/shared/DetailCard";
 
-type CancelDialogProps = {
-    application: LoanApplication;
-    offer: LoanOffer;
-    userBalance: UserBalanceResponse;
+type StartAuctionDialogProps = {
+    loan: UserLoan;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title: string;
-  content: React.ReactNode;
   txMessage?: string | null;
   txStatus?: "idle" | "success" | "error" | null;
   isSubmtting?: boolean;
   onConfirm: () => void | Promise<void>;
 };
 
-export function AcceptOfferDialog({
-
-    application,
-    offer,
-    userBalance,
+export function StartAuctionDialog({
+    loan,
   open,
   onOpenChange,
-  title,
-  content,
   txMessage,
   txStatus,
   isSubmtting,
   onConfirm,
-}: CancelDialogProps) {
+}: StartAuctionDialogProps) {
   const isSubmitting = Boolean(isSubmtting);
   const canRetry = txStatus !== "success";
-  const notAffordableMoney = application.borrower.toLowerCase() == offer.requester.toLowerCase() && userBalance.usdcBalance - offer.loanAmount < 0;
-  console.log(isSubmitting, canRetry)
-  console.log(application.borrower.toLowerCase() != offer.requester.toLowerCase(), userBalance.usdcBalance, offer.loanAmount, userBalance.usdcBalance - offer.loanAmount < 0)
-  console.log("notAffordableMoney :", notAffordableMoney);
+
+  const startPrice = loan.remainingAmount > BigInt(loan.loanAmount) * BigInt(6) / BigInt(10) 
+  ? loan.remainingAmount : BigInt(loan.loanAmount) * BigInt(6) / BigInt(10) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="text-foreground bg-background sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{content}</DialogDescription>
+          <DialogTitle>
+            Bắt đầu đấu giá khoản vay
+          </DialogTitle>
+          <DialogDescription>
+            <p>
+                Khoản vay chỉ được đấu giá khi đã quá hạn và chưa được thanh toán. 
+            </p>
+            <p>
+                Khi bắt đầu đấu giá, mọi người sẽ đấu giá để mua lại tài sản thế chấp của khoản vay.
+            </p>
+            <p className="text-red-400">
+                Số tiền khởi điểm = Max (Số tiền còn nợ, Số tiền vay ban đầu * 60%)
+            </p>
+          </DialogDescription>
         </DialogHeader>
-        <div>
-            {
-                application.borrower.toLowerCase() == offer.requester.toLowerCase() && 
-                <BeforeAfterCard 
-                    beforeLabel="Số dư hiện tại"
-                    beforeValue={formatUsdc(userBalance.usdcBalance)}
-                    changeLabel="Tiền cho vay"
-                    changeValue={formatUsdc(offer.loanAmount)}
-                    afterLabel="Số dư sau khi cho vay"
-                    afterValue={
-                        userBalance.usdcBalance - offer.loanAmount >= 0 ?
-                        formatUsdc(userBalance.usdcBalance - offer.loanAmount)
-                        :
-                        "Không đủ"
-                    }
-                    currency="USDC"
-                    type="decrease"
-                />
-            }
+        <div className="grid grid-cols-2 gap-4">
+            <DetailCard
+            label="Số tiền còn nợ"
+            value={formatUsdc(loan.remainingAmount) }
+           />
+            <DetailCard
+            label="60% Số tiền vay"
+            value={formatUsdc(BigInt(loan.loanAmount) * BigInt(6) / BigInt(10)) }
+           />
+           
+           <DetailCard
+            className="col-span-2"
+            label="Số tiền khởi điểm đấu giá"
+            value={formatUsdc(startPrice) }
+           />
+           
+            
         </div>
-
         <DialogFooter className="pt-3 bg-background text-foreground">
           {txMessage && (
                           <p
@@ -99,7 +100,7 @@ export function AcceptOfferDialog({
             onClick={() => {
               onConfirm();
             }}
-            disabled={isSubmitting || !canRetry || notAffordableMoney}
+            disabled={isSubmitting || !canRetry}
           >
             {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {isSubmitting ? "Đang xử lý..." : "Xác nhận"}

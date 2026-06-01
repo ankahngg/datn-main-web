@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/form";
 import clsx from "clsx";
 import { LoanOfferSubmitValues } from "@/model/LoanOffer";
-import { UserBalanceResponse } from "@/model/User";
+import { UserBalance, UserBalanceResponse } from "@/model/User";
 import { LoanApplication } from "@/model/LoanApplication";
 import { formatUsdc } from "@/utils";
 import { parseUnits } from "viem";
@@ -89,7 +89,7 @@ type LoanRequestFormValues = z.infer<
 type LoanRequestDialogProps = {
   loanApplication: LoanApplication;
   triggerLabel?: string;
-  userBalance: UserBalanceResponse;
+  userBalance: UserBalance;
   onSubmitRequest: (values: LoanOfferSubmitValues) => void;
   isSubmitting?: boolean;
   txStatus?: "idle" | "success" | "error" | null;
@@ -135,8 +135,10 @@ export function LoanRequestDialog({
   const interestAmount =
     principalAmount * (monthlyInterestRate / 100) * loanTermMonths;
   const totalRepayment = principalAmount + interestAmount;
-  const currentUser = userBalance.userWalletAddress;
+
   const loanId = loanApplication.id;
+  console.log("User Balance in Dialog:", userBalance);
+  console.log("User address:", userBalance.ethBalance);
 
   function handleOpenChange(nextOpen: boolean) {
     setIsModalOpen(nextOpen);
@@ -173,9 +175,15 @@ export function LoanRequestDialog({
             Tạo đề nghị vay mới
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Offer này sẽ được gắn với đơn vay #{loanId} theo 
-
+            Offer này sẽ được gắn với đơn vay #{loanId}
           </DialogDescription>
+          {loanApplication.borrower != userBalance.userWalletAddress && (
+            <DialogDescription className="red-text">
+              <p>1. Để tạo đề nghị vay bạn cần ứng trước số tiền</p>
+              <p>2. Khi đề nghị được chấp nhận bạn không cần phải trả nữa,</p>
+              <p>3. Bạn có thể lấy lại số tiền bằng cách hủy đề nghị</p>
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <Form {...form}>
@@ -194,7 +202,7 @@ export function LoanRequestDialog({
                 Người tạo đề nghị vay
               </p>
               <Input
-                value={currentUser}
+                value={userBalance.userWalletAddress}
                 className="h-9 border-muted-foreground bg-background text-foreground placeholder:text-muted-foreground"
               />
             </div>
@@ -278,21 +286,24 @@ export function LoanRequestDialog({
                 Tổng tiền phải trả: {formatAmount(totalRepayment)} USDC
               </p>
             </div>
-              {
-                  loanApplication.borrower != currentUser && (
-                    <div className="rounded-lg border border-red-400 bg-background/40 p-3">
-                      <p className="text-xs text-muted-foreground">
-                        Số dư hiện tại: {formatUsdc(userBalance.usdcBalance)} USDC
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Số tiền phải trả để tạo Offer: {principalAmount} USDC
-                      </p>
-                      <p className="text-sm font-medium text-foreground">
-                        Số dư còn lại: {formatUsdc(userBalance.usdcBalance - parseUnits(loanAmountInput,6))} USDC
-                      </p>
-                    </div>
-                  )
-              }
+            {loanApplication.borrower != userBalance.userWalletAddress && (
+              <div className="rounded-lg border border-red-400 bg-background/40 p-3">
+                <p className="text-xs text-muted-foreground">
+                  Số dư hiện tại: {formatUsdc(userBalance.usdcBalance)} USDC
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Số tiền phải trả để tạo Offer: {principalAmount} USDC
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  Số dư còn lại:{" "}
+                  {formatUsdc(
+                    BigInt(userBalance.usdcBalance) -
+                      BigInt(parseUnits(loanAmountInput, 6)),
+                  )}{" "}
+                  USDC
+                </p>
+              </div>
+            )}
 
             <DialogFooter className="pt-3 bg-background text-foreground">
               {txMessage && (

@@ -77,7 +77,7 @@ function Header() {
   }
 
   return (
-    <div className="flex justify-between border-b-2 border-(--devider-color) pt-5 pb-3">
+    <div className="flex justify-between border-b-2 border-(--devider-color) pt-5 pb-3 sticky top-0 bg-background z-10">
         {/* <WalletConnectButton /> */}
         <ConnectButton />
       <div

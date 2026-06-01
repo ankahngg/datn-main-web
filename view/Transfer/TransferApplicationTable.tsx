@@ -23,7 +23,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { WalletCards, XCircle } from "lucide-react";
+import { CircleDollarSign, WalletCards, XCircle } from "lucide-react";
 import { useAccount } from "wagmi";
 
 type Props = {
@@ -59,7 +59,7 @@ function TransferApplicationTable(props: Props) {
     },
     {
       accessorKey: "acceptedPrice",
-      header: sortableHeader<UserLoanTransfer>("Giá chốt chấp nhận"),
+      header: sortableHeader<UserLoanTransfer>("Giá chấp nhận"),
       cell: ({ row }) => {
         return row.original.acceptedPrice ? formatUsdc(row.original.acceptedPrice) : "-";
       },
@@ -88,6 +88,7 @@ function TransferApplicationTable(props: Props) {
         cell: ({ row }) => {
           const transfer = row.original;
           const canCancel = transfer.status === "CREATED" && address?.toLowerCase() === transfer.seller.toLowerCase();
+          const canUpdatePrice = transfer.status === "CREATED" && address?.toLowerCase() === transfer.seller.toLowerCase();
           return (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -103,7 +104,17 @@ function TransferApplicationTable(props: Props) {
                         <WalletCards className="size-4" />
                       {LoanTransferActionLabelMap["VIEW_DETAILS"]}
                     </DropdownMenuItem>
+
+                     <DropdownMenuItem
+                      onClick={() => onTransferAction("UPDATE_PRICE", transfer)}
+                        className="cursor-pointer"
+                      disabled={!canUpdatePrice}
+                    >
+                        <CircleDollarSign className="size-4"/>
+                      {LoanTransferActionLabelMap["UPDATE_PRICE"]}
+                    </DropdownMenuItem>
                     
+
                     <DropdownMenuItem
                       onClick={() => onTransferAction("CANCEL_TRANSFER", transfer)}
                       variant="destructive"
@@ -114,6 +125,7 @@ function TransferApplicationTable(props: Props) {
                       {LoanTransferActionLabelMap["CANCEL_TRANSFER"]}
                     </DropdownMenuItem>
 
+                   
                  </DropdownMenuContent>
             </DropdownMenu>
           )
@@ -121,9 +133,6 @@ function TransferApplicationTable(props: Props) {
         }
     }
 ];
-
-
-
 
   const {
     sorting,

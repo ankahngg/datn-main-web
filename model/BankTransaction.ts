@@ -50,7 +50,7 @@ export const transactionStatusLabelMap: Record<TransactionStatus, string> = {
   FAILED: "Thất bại",
 };
 
-export type Transaction = {
+export interface BankTransaction extends TransactionEventBaseResponse {
   id: number;
   type: BankAction;
   asset: BankAsset;

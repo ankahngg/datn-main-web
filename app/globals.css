@@ -153,3 +153,7 @@
 .hilight-row {
   @apply bg-green-200/10
 }
+
+.red-text {
+  @apply text-red-400
+}

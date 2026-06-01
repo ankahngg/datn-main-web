@@ -1,7 +1,12 @@
 
-import { UseGetUserNftsOptions } from "@/hooks/use-user-asset";
-import { Page, request } from "../api";
-import { mockBalance, mockNftsResponse, UserBalanceResponse, UserNftResponse } from "@/model/User";
+import { Page, Pageable, request } from "../api";
+import { mockBalance, mockNftsResponse, UserBalanceResponse, UserNftFilter, UserNftResponse } from "@/model/User";
+
+export interface UserNftParams {
+  filter: UserNftFilter;
+  pageable?: Pageable;
+}
+
 
 // Get the balance of a user by their wallet address
 export async function getUserBalance(address: string) {
@@ -20,7 +25,7 @@ export async function getUserBalance(address: string) {
 }
 
 // Get the NFTs owned by a user by their wallet address
-export async function getUserNfts(options: UseGetUserNftsOptions) {
+export async function getUserNfts(options: UserNftParams) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
   if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
     console.log("Returning mock NFTs for user:", options.filter.user);
@@ -30,9 +35,9 @@ export async function getUserNfts(options: UseGetUserNftsOptions) {
     path: "/api/v1/user-assets/nfts",
     query: {
         ...options.filter,
-        page: options.page ?? 0,
-        size: options.size ?? 10,
-        sort: options.sort ?? "createdAt,DESC",
+        page: options.pageable?.page ?? 0,
+        size: options.pageable?.size ?? 10,
+        sort: options.pageable?.sort ?? "timeCreated,DESC",
     },
     method: "GET",
   });

@@ -10,7 +10,7 @@ export interface LoanPayTransactionResponse {
   amount: bigint;
   amountPaid: bigint;
   totalAmountHaveToPay: bigint;
-  blockNumber: number;
+  blockNumber: bigint;
   txHash: string;
   logIndex: number;
   timeCreated: string;
@@ -27,7 +27,7 @@ export interface LoanPayTransaction {
   amount: bigint;
   amountPaid: bigint;
   totalAmountHaveToPay: bigint;
-  blockNumber: number;
+  blockNumber: bigint;
   txHash: string;
   logIndex: number;
   timeCreated: string;
@@ -69,7 +69,7 @@ export const mockLoanPayTransactionResponse: Page<LoanPayTransactionResponse> = 
       amount: BigInt("100000000"),
       amountPaid: BigInt("100000000"),
       totalAmountHaveToPay: BigInt("540000000"),
-      blockNumber: 22334455,
+      blockNumber: BigInt(22334455),
       txHash: "0xmocktx_3001_1",
       logIndex: 1,
       status: "DONE",
@@ -85,7 +85,7 @@ export const mockLoanPayTransactionResponse: Page<LoanPayTransactionResponse> = 
       amount: BigInt("100000000"),
       amountPaid: BigInt("200000000"),
       totalAmountHaveToPay: BigInt("540000000"),
-      blockNumber: 22349901,
+      blockNumber: BigInt(22334456),
       txHash: "0xmocktx_3001_2",
       logIndex: 2,
       status: "DONE",
@@ -101,7 +101,7 @@ export const mockLoanPayTransactionResponse: Page<LoanPayTransactionResponse> = 
       amount: BigInt("1380000000"),
       amountPaid: BigInt("1380000000"),
       totalAmountHaveToPay: BigInt("1380000000"),
-      blockNumber: 22110022,
+      blockNumber: BigInt(22110022),
       txHash: "0xmocktx_3002_1",
       logIndex: 0,
       status: "DONE",
@@ -117,7 +117,7 @@ export const mockLoanPayTransactionResponse: Page<LoanPayTransactionResponse> = 
       amount: BigInt("300000000"),
       amountPaid: BigInt("300000000"),
       totalAmountHaveToPay: BigInt("880000000"),
-      blockNumber: 22445566,
+      blockNumber: BigInt(22445567),
       txHash: "0xmocktx_3003_1",
       logIndex: 0,
       status: "PROCESSING",
@@ -133,7 +133,7 @@ export const mockLoanPayTransactionResponse: Page<LoanPayTransactionResponse> = 
       amount: BigInt("300000000"),
       amountPaid: BigInt("600000000"),
       totalAmountHaveToPay: BigInt("880000000"),
-      blockNumber: 22445567,
+      blockNumber: BigInt(22445568),
       txHash: "0xmocktx_3003_2",
       logIndex: 1,
       status: "FAILED",

@@ -9,7 +9,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-
 import { HandCoins } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -23,14 +22,20 @@ import clsx from "clsx";
 import { UserBalance, UserBalanceResponse } from "@/model/User";
 import { useMemo } from "react";
 import BeforeAfterCard from "@/components/shared/BeforeAfterCard";
-import { formatUsdc } from "@/utils";
+import { addDateDuration, formatDate, formatUsdc, subtractDate } from "@/utils";
 import { useGetLoans2 } from "@/hooks/use-get-loans";
 
 import { CreateLoanTransferApplicationSubmit } from "@/model/LoanTransfer";
-import { SelectTrigger, SelectValue, SelectContent, SelectItem, Select } from "@/components/ui/select";
+import {
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  Select,
+} from "@/components/ui/select";
+import { DetailCard } from "@/components/shared/DetailCard";
 
 type Props = {
-  
   onCreate: (offer: CreateLoanTransferApplicationSubmit) => void;
   txMessage?: string | null;
   txStatus?: "idle" | "success" | "error" | null;
@@ -67,7 +72,7 @@ function CreateTransferApplicationDialog(props: Props) {
 
   const filteredCanTransferLoans = useMemo(() => {
     if (!userLoan) return [];
-    return userLoan.filter((loan) => loan.loanStatus === "CREATED");
+    return userLoan.filter((loan) => loan.status === "CREATED");
   }, [userLoan]);
 
   const form = useForm<z.input<typeof formSchema>>({
@@ -79,16 +84,24 @@ function CreateTransferApplicationDialog(props: Props) {
 
   const submitDisabled = !form.formState.isValid || !!isSubmitting;
   const priceValue = form.watch("price");
+  const loanId = form.watch("loanId");
+  console.log("Loan ID selected in form:", loanId);
 
-  const price = useMemo(() => {
-    const parsed = formSchema.shape.price.safeParse(priceValue);
-    if (parsed.success) {
-      return parsed.data;
-    }
-    return null;
-  }, [priceValue]);
+  const selectedLoan = useMemo(() => {
+    if (!loanId) return null;
+    const val =
+      filteredCanTransferLoans.find((loan) => loan.loanId == loanId) || null;
+    if (!val) return null;
+    const endDate = addDateDuration(val.timeCreated, val.duration);
+    const timeLeft = subtractDate(new Date().toISOString(), endDate);
+    return {
+      ...val,
+      endDate: endDate,
+      timeLeft: timeLeft,
+    };
+  }, [loanId, filteredCanTransferLoans]);
 
- 
+  console.log("Selected loan for transfer application:", selectedLoan);
 
   function onSubmit(data: z.output<typeof formSchema>) {
     const res = formSchema.parse(data);
@@ -96,7 +109,7 @@ function CreateTransferApplicationDialog(props: Props) {
     const submitData: CreateLoanTransferApplicationSubmit = {
       seller: address || "",
       price: parseUnits(res.price.toString(), 6), // Convert price to USDC decimals
-        loanId: res.loanId,
+      loanId: res.loanId,
     };
     console.log("Submitting create offer with data:", submitData);
     onCreate(submitData);
@@ -120,7 +133,8 @@ function CreateTransferApplicationDialog(props: Props) {
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
             <p>
-              Đơn chuyển nhượng vay sẽ cho phép bạn chuyển nhượng khoản vay của mình cho người khác.
+              Đơn chuyển nhượng vay sẽ cho phép bạn chuyển nhượng khoản vay của
+              mình cho người khác.
             </p>
           </DialogDescription>
         </DialogHeader>
@@ -130,33 +144,68 @@ function CreateTransferApplicationDialog(props: Props) {
           onSubmit={form.handleSubmit(onSubmit as any)}
           className="space-y-4"
         >
-
-        <Controller
+          <Controller
             name="loanId"
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel>Chọn khoản vay muốn chuyển nhượng</FieldLabel>
                 <Select
-                 
-                    onValueChange={(value) => {
-                        field.onChange(value);
-                    }}
-                    value={field.value as any}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                  }}
+                  value={field.value as any}
                 >
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Chọn khoản vay" />
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                        {filteredCanTransferLoans.map((loan) => (
-                            <SelectItem key={loan.loanId} value={loan.loanId.toString()}>
-                                {`Loan #${loan.loanId} - Số tiền: ${formatUsdc(loan.loanAmount)} USDC`}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Chọn khoản vay" />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    {filteredCanTransferLoans.map((loan) => (
+                      <SelectItem
+                        key={loan.loanId}
+                        value={loan.loanId.toString()}
+                      >
+                        {`Loan #${loan.loanId} - Số tiền: ${formatUsdc(loan.loanAmount)} USDC`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
+                )}
+                {selectedLoan && (
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <DetailCard
+                      className="col-span-3"
+                      label="Người cho vay"
+                      value={selectedLoan.lender}
+                      valueClassName="font-mono"
+                    />
+                    <DetailCard
+                      label="Tiền vay"
+                      value={`${formatUsdc(selectedLoan.loanAmount)} USDC `}
+                    />
+                    <DetailCard
+                      label="Tiền phải trả"
+                      value={`${formatUsdc(selectedLoan.totalAmountHaveToPay)} USDC `}
+                    />
+                    <DetailCard
+                      label="Tiền đã trả"
+                      value={`${formatUsdc(selectedLoan.amountPaid)} USDC `}
+                    />
+                    <DetailCard
+                      className="col-span-3"
+                      label="Ngày đến hạn"
+                      value={
+                        formatDate(selectedLoan.endDate) +
+                        " - Còn " +
+                        selectedLoan.timeLeft.months +
+                        " tháng " +
+                        selectedLoan.timeLeft.days +
+                        " ngày"
+                      }
+                    />
+                  </div>
                 )}
               </Field>
             )}
@@ -180,7 +229,6 @@ function CreateTransferApplicationDialog(props: Props) {
               </Field>
             )}
           />
-
 
           <DialogFooter className="bg-background text-foreground">
             {txMessage && (

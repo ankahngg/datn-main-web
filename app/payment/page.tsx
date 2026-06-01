@@ -16,6 +16,9 @@ import { RepaymentHistoryDialog } from "@/view/Repayment/RepaymentHistoryDialog"
 import { RepaymentActionType } from "@/model/enum";
 import { contractAddress } from "@/config/app.config";
 import abiData from "@/abi.json";
+import { useUserBalance } from "@/hooks/use-user-asset";
+import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
+import { FullScreenError } from "@/components/shared/FullScreenError";
 
 export default function RepaymentPage() {
   const { address } = useAccount();
@@ -32,25 +35,33 @@ export default function RepaymentPage() {
 
   // Transaction states
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(null);
+  const [txStatus, setTxStatus] = useState<"idle" | "success" | "error" | null>(
+    null,
+  );
   const [txMessage, setTxMessage] = useState<string | null>(null);
 
   // Fetch repayment loans
   const { data: repaymentLoans, isLoading: isLoadingLoans } = useGetLoans2({
-    filter: { 
+    filter: {
       borrower: address,
-     },
-    page: 0,
-    size: 10,
-    sort: "timeCreated,DESC",
+    },
+    pageable: { page: 0, size: 1000, sort: "timeCreated,DESC" },
   });
 
-  const loans = repaymentLoans ?? [];
+  const { data: userBalance, isLoading: userBalanceIsLoading } =
+    useUserBalance(address);
+
+  if (userBalanceIsLoading || isLoadingLoans) return <FullScreenLoading />;
+
+  if (!repaymentLoans || !userBalance)
+    return (
+      <FullScreenError message="Không thể tải dữ liệu khoản vay của bạn. Vui lòng thử lại sau." />
+    );
 
   // Handle action buttons
   const handleTableAction = (action: RepaymentActionType, loan: UserLoan) => {
     setSelectedLoan(loan);
-    
+
     switch (action) {
       case "VIEW_DETAILS":
         setIsDetailsDialogOpen(true);
@@ -68,7 +79,7 @@ export default function RepaymentPage() {
   };
 
   // Handle repayment
-  const handleRepayLoan = async (amount: string) => {
+  const handleRepayLoan = async (amount: bigint) => {
     if (!selectedLoan || !address) {
       setTxStatus("error");
       setTxMessage("Vui lòng chọn khoản vay và kết nối ví");
@@ -85,12 +96,13 @@ export default function RepaymentPage() {
         address: contractAddress as `0x${string}`,
         abi: abiData.abi,
         functionName: "payLoan",
-        args: [selectedLoan.loanId, BigInt(amount)],
+        args: [selectedLoan.loanId, amount],
       });
 
       setTxStatus("success");
-      setTxMessage("Trả nợ thành công! Dư nợ của bạn sẽ được cập nhật sau khi giao dịch được xác nhận.");
-     
+      setTxMessage(
+        "Trả nợ thành công!",
+      );
     } catch (error) {
       console.error("Error repaying loan:", error);
       setTxStatus("error");
@@ -101,7 +113,7 @@ export default function RepaymentPage() {
   };
 
   // Handle end loan
-  const handleEndLoan = async () => {
+  const handleEndLoan = async (amount : bigint) => {
     if (!selectedLoan || !address) {
       setTxStatus("error");
       setTxMessage("Vui lòng chọn khoản vay và kết nối ví");
@@ -113,7 +125,18 @@ export default function RepaymentPage() {
     setTxMessage(null);
 
     try {
-      
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "endLoan",
+        args: [selectedLoan.loanId],
+      });
+
+      setTxStatus("success");
+      setTxMessage(
+        "Kết thúc khoản vay thành công!",
+      );
+
     } catch (error) {
       console.error("Error ending loan:", error);
       setTxStatus("error");
@@ -129,7 +152,7 @@ export default function RepaymentPage() {
       message="Kết nối ví để thực hiện hoàn trả khoản vay và cập nhật dư nợ."
     >
       <div className="space-y-6 pb-8">
-        <PageHeader 
+        <PageHeader
           title="Khoản vay của bạn"
           description="Xem và quản lý các khoản vay hiện tại của bạn. Bạn có thể xem chi tiết, lịch sử thanh toán, thực hiện trả nợ hoặc kết thúc khoản vay."
         />
@@ -141,7 +164,7 @@ export default function RepaymentPage() {
           </div>
 
           <BorrowerLoanTable
-            loans={loans}
+            loans={repaymentLoans}
             isLoading={isLoadingLoans}
             onAction={handleTableAction}
           />
@@ -160,15 +183,18 @@ export default function RepaymentPage() {
           loan={selectedLoan}
         />
 
-        <RepaymentDialog
-          open={isRepayDialogOpen}
-          onOpenChange={setIsRepayDialogOpen}
-          loan={selectedLoan}
-          onConfirm={handleRepayLoan}
-          isSubmitting={isSubmitting}
-          txStatus={txStatus}
-          txMessage={txMessage}
-        />
+        {selectedLoan && (
+          <RepaymentDialog
+            open={isRepayDialogOpen}
+            onOpenChange={setIsRepayDialogOpen}
+            loan={selectedLoan}
+            userBalance={userBalance}
+            onConfirm={handleRepayLoan}
+            isSubmitting={isSubmitting}
+            txStatus={txStatus}
+            txMessage={txMessage}
+          />
+        )}
 
         <EndLoanDialog
           open={isEndLoanDialogOpen}

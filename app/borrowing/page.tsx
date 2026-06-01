@@ -42,9 +42,7 @@ export default function BorrowingPage() {
   );
   const {data: userLoanApplications, isLoading: isLoadingLoanApplications } = useUserLoanApplications2({
     filter: { borrower: address },
-    page: 0,
-    size: 10,
-    sort: "createdAt,DESC",
+    pageable: { page: 0, size: 10, sort: "createdAt,DESC" },
   });
   console.log("User Loan Applications:", userLoanApplications);
 
@@ -52,11 +50,13 @@ export default function BorrowingPage() {
   const availableNfts = (userNfts?.content ?? [])
     .filter((nft) => nft.status === "DEPOSITED" || nft.status === "COLLATERALIZED")
     .map((nft) => ({
-      id: nft.id,
-      nftAddress: nft.nftAddress,
-      tokenId: nft.tokenId.toString(),
+      ...nft,
       name: `NFT #${nft.nftId.toString()}`,
     }));
+  
+    const depositedNfts = useMemo(() => {
+      return (userNfts?.content ?? []).filter((nft) => nft.status === "DEPOSITED");
+    }, [userNfts]);
 
   const applications = userLoanApplications ?? [];
 
@@ -149,7 +149,7 @@ export default function BorrowingPage() {
   };
 
   const handleViewLoan = (loanId: bigint) => {
-    router.push(`/repayment?loanId=${loanId}`);
+    router.push(`/payment/history/${loanId.toString()}`);
   };
 
   return (
@@ -163,7 +163,6 @@ export default function BorrowingPage() {
           description="Tạo đơn vay mới và quản lý các đơn vay hiện có. Bạn có thể xem chi tiết từng đơn vay và trạng thái của chúng."
         />
         
-
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-sm">
             <Wallet className="size-4" />
@@ -173,7 +172,7 @@ export default function BorrowingPage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <LoanApplicationDialog
               onSubmitApplication={handleSubmitApplication}
-              availableNfts={availableNfts}
+              availableNfts={depositedNfts}
               ethBalance={ethBalance}
               isSubmitting={isSubmitting}
               txStatus={txStatus}

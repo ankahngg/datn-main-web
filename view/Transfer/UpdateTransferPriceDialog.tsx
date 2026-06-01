@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UserLoanTransfer } from "@/model/LoanTransfer";
-import { CreateLoanTransferOfferSubmitValues } from "@/model/LoanTransferOffer";
+import { CreateLoanTransferOfferSubmitValues, UpdateLoanTransferPriceSubmitValues } from "@/model/LoanTransferOffer";
 import { HandCoins } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -20,38 +20,34 @@ import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import clsx from "clsx";
-import { UserBalance, UserBalanceResponse } from "@/model/User";
 import { useMemo } from "react";
-import BeforeAfterCard from "@/components/shared/BeforeAfterCard";
-import { formatUsdc } from "@/utils";
+
 
 type Props = {
   transferApplication: UserLoanTransfer;
-  userBalance: UserBalance;
-  onCreate: (offer: CreateLoanTransferOfferSubmitValues) => void;
+  onUpdate: (transfer: UpdateLoanTransferPriceSubmitValues) => void;
   txMessage?: string | null;
   txStatus?: "idle" | "success" | "error" | null;
   isSubmitting?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  enabled: boolean;
+  
 };
 
 const formSchema = z.object({
   price: z.coerce.number().min(0, "Giá phải lớn hơn hoặc bằng 0"),
 });
 
-function CreateTransferOfferDialog(props: Props) {
+function UpdateTransferPriceDialog(props: Props) {
   const { address } = useAccount();
   const {
     transferApplication,
-    onCreate,
+    onUpdate,
     txMessage,
     txStatus,
     isSubmitting,
     open,
     onOpenChange,
-    enabled = true,
   } = props;
 
   const form = useForm<z.input<typeof formSchema>>({
@@ -61,60 +57,39 @@ function CreateTransferOfferDialog(props: Props) {
     },
   });
 
-  const submitDisabled = !form.formState.isValid || !!isSubmitting;
   const priceValue = form.watch("price");
-
+  
   const price = useMemo(() => {
-    const parsed = formSchema.shape.price.safeParse(priceValue);
-    if (parsed.success) {
-      return parsed.data;
-    }
-    return null;
-  }, [priceValue]);
-
-  const remainingBalance = useMemo(() => {
-    if (price === null) return props.userBalance.usdcBalance;
-    const remaining =
-      BigInt(props.userBalance.usdcBalance) - BigInt(parseUnits(price.toString(), 6));
-    return remaining;
-  }, [price, props.userBalance.usdcBalance]);
+      const parsed = formSchema.shape.price.safeParse(priceValue);
+      if (parsed.success) {
+          return parsed.data;
+        }
+        return null;
+    }, [priceValue]);
+    
+    const submitDisabled = !form.formState.isValid || !!isSubmitting || price === null || price == 0;
 
   function onSubmit(data: z.output<typeof formSchema>) {
     const res = formSchema.parse(data);
 
-    const submitData: CreateLoanTransferOfferSubmitValues = {
-      seller: address || "",
-      price: parseUnits(res.price.toString(), 6), // Convert price to USDC decimals
+    const submitData: UpdateLoanTransferPriceSubmitValues = {
+      newPrice: parseUnits(res.price.toString(), 6), // Convert price to USDC decimals
       transferId: transferApplication.transferId,
     };
-    console.log("Submitting create offer with data:", submitData);
-    onCreate(submitData);
+    console.log("Submitting update price with data:", submitData);
+    onUpdate(submitData);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <div className="flex flex-wrap">
-        <DialogTrigger asChild>
-          <Button className="my-btn" disabled={!enabled}>
-            <HandCoins className="size-4" />
-            Tạo đề nghị mua chuyển nhượng
-          </Button>
-        </DialogTrigger>
-      </div>
-
       <DialogContent className="text-foreground bg-background sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-zinc-100">
-            Tạo đề nghị mua chuyển nhượng mới
+            Cập nhật giá chuyển nhượng 
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
             <p>
-              Đề nghị này sẽ gắn với đơn chuyển nhượng vay #
-              {transferApplication.transferId} của bạn.
-            </p>
-            <p className="text-red-400">
-              Bạn cần phải ứng trước tiền cho đề nghị này, và bạn có thể lấy lại
-              bất cứ lúc nào khi hủy đề nghị.
+                Cập nhật giá mới cho đơn #{transferApplication.transferId} của bạn
             </p>
           </DialogDescription>
         </DialogHeader>
@@ -126,7 +101,7 @@ function CreateTransferOfferDialog(props: Props) {
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel>Giá đề nghị (USDC)</FieldLabel>
+                <FieldLabel>Giá mới (USDC)</FieldLabel>
                 <Input
                   {...field}
                   value={field.value as any}
@@ -138,19 +113,6 @@ function CreateTransferOfferDialog(props: Props) {
                 )}
               </Field>
             )}
-          />
-
-          <BeforeAfterCard
-            beforeLabel="Số dư USDC hiện tại"
-            beforeValue={formatUsdc(props.userBalance.usdcBalance)}
-            changeLabel="Số USDC ứng trước cho đề nghị này"
-            changeValue={price || 0}
-            type="decrease"
-            afterLabel="Số dư USDC còn lại"
-            afterValue={
-              remainingBalance < 0 ? "Không đủ" : formatUsdc(remainingBalance)
-            }
-            currency="USDC"
           />
 
           <DialogFooter className="bg-background text-foreground">
@@ -166,7 +128,7 @@ function CreateTransferOfferDialog(props: Props) {
               </p>
             )}
             <Button type="submit" disabled={submitDisabled} className="my-btn">
-              {isSubmitting ? "Đang xử lý..." : "Tạo đề nghị"}
+              {isSubmitting ? "Đang xử lý..." : "Chấp nhận"}
             </Button>
           </DialogFooter>
         </form>
@@ -175,4 +137,4 @@ function CreateTransferOfferDialog(props: Props) {
   );
 }
 
-export default CreateTransferOfferDialog;
+export default UpdateTransferPriceDialog;

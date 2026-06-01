@@ -62,6 +62,10 @@ export function BorrowerLoanTable({
   const columns = React.useMemo<ColumnDef<UserLoan>[]>(
     () => [
       {
+        accessorKey: "loanId",
+        header: sortableHeader<UserLoan>("ID"),
+      },
+      {
         accessorKey: "lender",
         header: sortableHeader<UserLoan>("Người cho vay"),
         cell: ({ row }) => (
@@ -93,10 +97,10 @@ export function BorrowerLoanTable({
         }
       },
       {
-        accessorKey: "loanStatus",
+        accessorKey: "status",
         header: sortableHeader<UserLoan>("Trạng thái"),
         cell: ({ row }) => {
-          const status = row.original.loanStatus;
+          const status = row.original.status;
           return (
             <Badge variant={UserLoanStatusVariantMap[status]}>
               {UserLoanStatusLabelMap[status]}
@@ -125,7 +129,7 @@ export function BorrowerLoanTable({
         cell: ({ row }) => {
           const loan = row.original;
           // Chỉ cho phép khi nào khoản vay đang ở trạng thái CREATED và người dùng hiện tại là người vay
-          const isPayable = loan.loanStatus === "CREATED" && address?.toLowerCase() === loan.borrower.toLowerCase();
+          const isPayable = loan.status === "CREATED" && address?.toLowerCase() === loan.borrower.toLowerCase();
 
           return (
             <DropdownMenu>
@@ -219,10 +223,10 @@ export function BorrowerLoanTable({
         searchValue={globalFilter}
         onSearchChange={setGlobalFilter}
         statusFilter={{
-          value: (table.getColumn("loanStatus")?.getFilterValue() as string) ?? "all",
+          value: (table.getColumn("status")?.getFilterValue() as string) ?? "all",
           onChange: (value) =>
             table
-              .getColumn("loanStatus")
+              .getColumn("status")
               ?.setFilterValue(value === "all" ? undefined : value),
           options: [
             { value: "all", label: "Tất cả trạng thái" },

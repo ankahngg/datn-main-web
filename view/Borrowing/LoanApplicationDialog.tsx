@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/form"
 import clsx from "clsx"
 import { LoanApplicationSubmitValues } from "@/model/LoanApplication"
+import { UserNft } from "@/model/User"
 
 
 
@@ -127,18 +128,13 @@ function parseDecimalInput(value: string | undefined) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-type NftOption = {
-  id: number
-  nftAddress: string
-  tokenId: string
-  name: string
-}
+
 
 type LoanApplicationFormValues = z.infer<ReturnType<typeof createLoanApplicationSchema>>
 
 type LoanApplicationDialogProps = {
   onSubmitApplication: (values: LoanApplicationSubmitValues) => void
-  availableNfts: NftOption[]
+  availableNfts: UserNft[]
   ethBalance: number
   isSubmitting?: boolean
   txStatus?: "idle" | "success" | "error" | null

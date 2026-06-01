@@ -78,7 +78,7 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
         cell: ({ row }) => {
           const txHash = row.original.txHash;
           return (
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="font-mono text-xs ">
               {
                 shortAddress(txHash)
               }
@@ -140,14 +140,16 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
         onSearchChange={setGlobalFilter}
         searchPlaceholder="Tìm theo ID, TX Hash, thời gian..."
         statusFilter={{
-          value: (table.getColumn("loanStatus")?.getFilterValue() as string) ?? "all",
+          value: (table.getColumn("status")?.getFilterValue() as string) ?? "all",
           onChange: (value) =>
-            table.getColumn("loanStatus")?.setFilterValue(value === "all" ? undefined : value),
+            table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
 
           options: [
-            { value: "all", label: "Tất cả giao dịch" },
-            { value: "PAY", label: "Trả vay" },
-            { value: "END", label: "Hoàn tất vay" },
+            { label: "Tất cả", value: "all" },
+            ...Object.entries(transactionStatusLabelMap).map(([value, label]) => ({
+              label,
+              value,
+            })),
           ]
         }
         }

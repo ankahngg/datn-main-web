@@ -22,8 +22,8 @@ import {
 
 
 import clsx from "clsx";
-import { bankActionLabelMap, transactionStatusVariantMap, transactionStatusLabelMap, Transaction } from "@/model/BankTransaction";
-import { formatUsdc } from "@/utils";
+import { bankActionLabelMap, transactionStatusVariantMap, transactionStatusLabelMap, BankTransaction } from "@/model/BankTransaction";
+import { formatDate, formatUsdc } from "@/utils";
 import { formatEther } from "viem";
 
 
@@ -39,7 +39,7 @@ function formatAmount(value: number | string) {
 }
 
 type TransactionHistoryTableProps = {
-  history: Transaction[];
+  history: BankTransaction[];
 };
 
 export function TransactionHistoryTable({ history }: TransactionHistoryTableProps) {
@@ -52,8 +52,8 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
     setGlobalFilter,
     clearFilters: clearTableFilters,
   } = useDataTableState();
-  const [assetFilter, setAssetFilter] = React.useState<Transaction["asset"] | "all">("all");
-  const [typeFilter, setTypeFilter] = React.useState<Transaction["type"] | "all">("all");
+  const [assetFilter, setAssetFilter] = React.useState<BankTransaction["asset"] | "all">("all");
+  const [typeFilter, setTypeFilter] = React.useState<BankTransaction["type"] | "all">("all");
 
   const assetOptions = React.useMemo(
     () => Array.from(new Set(history.map((tx) => tx.asset))),
@@ -76,24 +76,24 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
     setTypeFilter("all");
   }, [clearTableFilters]);
 
-  const columns = React.useMemo<ColumnDef<Transaction>[]>(
+  const columns = React.useMemo<ColumnDef<BankTransaction>[]>(
     () => [
       {
         accessorKey: "id",
-        header: sortableHeader<Transaction>("ID"),
+        header: sortableHeader<BankTransaction>("ID"),
       },
       {
         accessorKey: "type",
-        header: sortableHeader<Transaction>("Loại"),
+        header: sortableHeader<BankTransaction>("Loại"),
         cell: ({ row }) => bankActionLabelMap[row.original.type],
       },
       {
         accessorKey: "asset",
-        header: sortableHeader<Transaction>("Tài sản"),
+        header: sortableHeader<BankTransaction>("Tài sản"),
       },
       {
         accessorKey: "amount",
-        header: sortableHeader<Transaction>("Số lượng"),
+        header: sortableHeader<BankTransaction>("Số lượng"),
         cell: ({ row }) => {
           const amount = row.original.amount;
           const asset = row.original.asset;
@@ -106,11 +106,14 @@ export function TransactionHistoryTable({ history }: TransactionHistoryTableProp
       },
       {
         accessorKey: "time",
-        header: sortableHeader<Transaction>("Thời gian"),
+        header: sortableHeader<BankTransaction>("Thời gian"),
+        cell: ({ row }) => {
+          return formatDate(row.original.time);
+        }
       },
       {
         accessorKey: "status",
-        header: sortableHeader<Transaction>("Trạng thái"),
+        header: sortableHeader<BankTransaction>("Trạng thái"),
         cell: ({ row }) => {
           const status = row.original.status;
           return <Badge variant={transactionStatusVariantMap[status]}>{transactionStatusLabelMap[status]}</Badge>;

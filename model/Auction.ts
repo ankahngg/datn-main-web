@@ -45,9 +45,9 @@ export type AuctionFilter = {
     toTimeCreated?: string;   // local date-time string
 }
 
-export const AuctionStatusVariantMap: Record<AuctionStatusResponse, "default" | "success" | "warning" | "danger"> = {
+export const AuctionStatusVariantMap: Record<AuctionStatusResponse, "default" | "success" | "warning" | "danger" | "secondary"> = {
     PENDING_CREATED: "warning",
-    CREATED: "default",
+    CREATED: "secondary",
     PENDING_FINALIZED: "warning",
     FINALIZED: "success",
 };

@@ -1,5 +1,5 @@
 {
-    "abi": [
+   "abi": [
     {
       "inputs": [
         {
@@ -67,12 +67,18 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "offerId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "price",
           "type": "uint256"
         },
         {
           "indexed": false,
-          "internalType": "enum Bank2.LoanTransferApplicationStatus",
+          "internalType": "enum Bank2.ApplicationStatus",
           "name": "status",
           "type": "uint8"
         },
@@ -134,7 +140,7 @@
         {
           "indexed": false,
           "internalType": "enum Bank2.LoanStatus",
-          "name": "loanStatus",
+          "name": "status",
           "type": "uint8"
         },
         {
@@ -264,6 +270,31 @@
       "inputs": [
         {
           "indexed": true,
+          "internalType": "uint256",
+          "name": "offerId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "CancelLoanTransferOffer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "internalType": "address",
           "name": "payer",
           "type": "address"
@@ -319,7 +350,7 @@
         },
         {
           "indexed": false,
-          "internalType": "enum Bank2.LoanApplicationStatus",
+          "internalType": "enum Bank2.ApplicationStatus",
           "name": "status",
           "type": "uint8"
         },
@@ -375,6 +406,18 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "totalAmountHaveToPay",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum Bank2.ApplicationStatus",
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "timestamp",
           "type": "uint256"
         }
@@ -411,7 +454,7 @@
         },
         {
           "indexed": false,
-          "internalType": "enum Bank2.LoanTransferApplicationStatus",
+          "internalType": "enum Bank2.ApplicationStatus",
           "name": "status",
           "type": "uint8"
         },
@@ -423,6 +466,49 @@
         }
       ],
       "name": "CreateLoanTransferApplication",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "offerId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "transferId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum Bank2.ApplicationStatus",
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "CreateLoanTransferOffer",
       "type": "event"
     },
     {
@@ -476,6 +562,12 @@
           "internalType": "uint256",
           "name": "nftId",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum Bank2.NFTStatus",
+          "name": "status",
+          "type": "uint8"
         },
         {
           "indexed": false,
@@ -554,7 +646,7 @@
         {
           "indexed": false,
           "internalType": "enum Bank2.LoanStatus",
-          "name": "loanStatus",
+          "name": "status",
           "type": "uint8"
         },
         {
@@ -701,6 +793,31 @@
       "inputs": [
         {
           "indexed": true,
+          "internalType": "uint256",
+          "name": "applicationId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newPrice",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "UpdateLoanTransferApplication",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "internalType": "address",
           "name": "user",
           "type": "address"
@@ -788,6 +905,11 @@
         {
           "internalType": "uint256",
           "name": "applicationId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offerId",
           "type": "uint256"
         }
       ],
@@ -982,6 +1104,19 @@
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "offerId",
+          "type": "uint256"
+        }
+      ],
+      "name": "cancelLoanTransferOffer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "enum Bank2.CollateralType",
           "name": "collateralType",
           "type": "uint8"
@@ -1059,6 +1194,24 @@
         }
       ],
       "name": "createLoanTransferApplication",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "applicationId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        }
+      ],
+      "name": "createLoanTransferOffer",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1174,9 +1327,9 @@
           "type": "uint256"
         },
         {
-          "internalType": "bool",
+          "internalType": "enum Bank2.NFTStatus",
           "name": "",
-          "type": "bool"
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -1236,7 +1389,12 @@
           "type": "uint256"
         },
         {
-          "internalType": "enum Bank2.LoanApplicationStatus",
+          "internalType": "uint256",
+          "name": "acceptedOfferId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum Bank2.ApplicationStatus",
           "name": "status",
           "type": "uint8"
         }
@@ -1292,7 +1450,7 @@
         },
         {
           "internalType": "address",
-          "name": "lender",
+          "name": "requester",
           "type": "address"
         },
         {
@@ -1312,13 +1470,18 @@
         },
         {
           "internalType": "uint256",
+          "name": "totalAmountHaveToPay",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
           "name": "createdAt",
           "type": "uint256"
         },
         {
-          "internalType": "bool",
-          "name": "isDeleted",
-          "type": "bool"
+          "internalType": "enum Bank2.ApplicationStatus",
+          "name": "status",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -1373,7 +1536,64 @@
           "type": "uint256"
         },
         {
-          "internalType": "enum Bank2.LoanTransferApplicationStatus",
+          "internalType": "enum Bank2.ApplicationStatus",
+          "name": "status",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "loanTransferOfferIdCounter",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "loanTransferOffers",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "applicationId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "createdAt",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum Bank2.ApplicationStatus",
           "name": "status",
           "type": "uint8"
         }
@@ -1559,6 +1779,24 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "applicationId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "newPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateLoanTransferApplication",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "usdcToken",
       "outputs": [
@@ -1597,9 +1835,9 @@
           "type": "uint256"
         },
         {
-          "internalType": "bool",
-          "name": "isLocked",
-          "type": "bool"
+          "internalType": "enum Bank2.NFTStatus",
+          "name": "status",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",

@@ -35,11 +35,15 @@ import { CancelTransferOfferDialog } from "@/view/Transfer/CancelTransferOfferDi
 import CreateTransferOfferDialog from "@/view/Transfer/CreateTransferOfferDialog";
 import TransferOfferTable from "@/view/Transfer/TransferOfferTable";
 import { Wallet } from "lucide-react";
+import abiData from "@/abi.json";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { format } from "path";
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useWriteContract } from "wagmi";
+import { contractAddress } from "@/config/app.config";
+import { set } from "zod";
+import { ca } from "zod/v4/locales";
 
 function Page() {
   const params = useParams<{ transferId: string }>();
@@ -60,6 +64,8 @@ function Page() {
   const [accepter, setAccepter] = useState<"SELLER" | "BUYER">("SELLER");
 
   const { address } = useAccount();
+  const router = useRouter();
+  const { writeContractAsync } = useWriteContract();
 
   const {
     data: userBalance,
@@ -99,6 +105,7 @@ function Page() {
     switch (action) {
       case "ACCEPT_OFFER":
         setOpenAcceptOfferDialog(true);
+        setAccepter("SELLER");
         break;
       case "CANCEL_OFFER":
         setCancelOfferDialog(true);
@@ -106,21 +113,79 @@ function Page() {
     }
   }
 
-  function onCreateTransferOffer(val: CreateLoanTransferOfferSubmitValues) {
-    alert(
-      `Create offer with price: ${val.price}, transferId: ${val.transferId}`,
-    );
+  async function onCreateTransferOffer(
+    val: CreateLoanTransferOfferSubmitValues,
+  ) {
+    if (!address) {
+      console.warn("Wallet is not connected");
+      setTxStatus("error");
+      setTxMessage("Wallet is not connected");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+
+    try {
+      await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "createLoanTransferOffer",
+        args: [val.transferId, val.price],
+      });
+
+      setTxStatus("success");
+      setTxMessage("Tạo đề nghị chuyển nhượng thành công!");
+    } catch (error) {
+      console.error("Error creating transfer offer:", error);
+      setTxStatus("error");
+      setTxMessage("Lỗi: Không thể tạo đề nghị chuyển nhượng");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function onCancelTransferOffer(offerId: bigint) {
     alert(`Cancel offer with id: ${offerId}`);
   }
 
-  function onAcceptTransferOffer(
+  async function onAcceptTransfer(
     accepter: "SELLER" | "BUYER",
-    offerId?: bigint,
+    offerId: bigint,
+    transferId: bigint 
   ) {
-    alert(`Accept offer ${offerId} as ${accepter}`);
+    if (!address) {
+      console.warn("Wallet is not connected");
+      setTxStatus("error");
+      setTxMessage("Wallet is not connected");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setTxStatus(null);
+    setTxMessage(null);
+    console.log("Accepting transfer with data:", { accepter, offerId, transferId });
+    try {
+       
+       await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: abiData.abi,
+        functionName: "acceptLoanTransferApplication",
+        args: [transferId, offerId]
+      });
+
+      setTxStatus("success");
+      setTxMessage("Chấp nhận đề nghị chuyển nhượng thành công!");
+
+    } catch (error) {
+      console.error("Error accepting transfer offer:", error);
+      setTxStatus("error");
+      setTxMessage("Lỗi: Không thể chấp nhận đề nghị chuyển nhượng");
+    }
+    finally {
+      setIsSubmitting(false);
+    }
   }
 
   // Chỉ mua được khi đang ở trạng thái CREATED và người mua phải không là seller của đơn chuyển nhượng đó
@@ -151,21 +216,34 @@ function Page() {
             <DetailCard
               label="Người bán"
               value={loanTransfer.seller}
-              className="col-span-4"
+              className="col-span-4 detail-card-bg"
             />
             <DetailCard
               label="Người mua"
               value={loanTransfer.buyer || "Chưa có người mua"}
-              className="col-span-4"
+              className="col-span-4 detail-card-bg"
             />
 
             <DetailCard
               label="Khoản vay chuyển nhượng"
-              value={loanTransfer.loanId}
+              value={
+                <div className="flex gap-4 items-center">
+                  <div>ID #{loanTransfer.loanId}</div>
+                  <Button 
+                    className="text-sm text-muted-foreground italic underline hover:text-foreground bg-transparent border-0 p-0"
+                    onClick={() => router.push(`/payment/history/${loanTransfer.loanId}`)}
+                    >
+                      
+                    Xem khoản vay
+                  </Button>
+                </div>
+              }
+              className="detail-card-bg"
             />
             <DetailCard
               label="Giá chuyển nhượng"
               value={formatUsdc(loanTransfer.price)}
+              className="detail-card-bg"
             />
 
             <DetailCard
@@ -177,10 +255,12 @@ function Page() {
                   {applicationStatusLabelMap[loanTransfer.status]}
                 </Badge>
               }
+              className="detail-card-bg"
             />
             <DetailCard
               label="Thời gian tạo"
               value={formatDate(loanTransfer.timeCreated)}
+              className="detail-card-bg"
             />
           </CardContent>
           <CardFooter>
@@ -226,20 +306,18 @@ function Page() {
           />
         )}
 
-       
-          <AcceptTransferDialog
-            transferApplication={loanTransfer}
-            userBalance={userBalance}
-            transferOffer={selectedOffer as UserLoanTransferOffer}
-            onConfirm={onAcceptTransferOffer}
-            txMessage={txMessage}
-            txStatus={txStatus}
-            isSubmtting={isSubmitting}
-            open={openAcceptOfferDialog}
-            onOpenChange={setOpenAcceptOfferDialog}
-            accepter={accepter}
-          />
-        
+        <AcceptTransferDialog
+          transferApplication={loanTransfer}
+          userBalance={userBalance}
+          transferOffer={selectedOffer as UserLoanTransferOffer}
+          onConfirm={onAcceptTransfer}
+          txMessage={txMessage}
+          txStatus={txStatus}
+          isSubmtting={isSubmitting}
+          open={openAcceptOfferDialog}
+          onOpenChange={setOpenAcceptOfferDialog}
+          accepter={accepter}
+        />
 
         <section className="space-y-4">
           <div className="flex flex-col gap-2">

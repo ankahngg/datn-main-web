@@ -22,14 +22,14 @@ import { UserLoanTransferOffer } from "@/model/LoanTransferOffer";
 
 type AcceptTransferDialogProps = {
     transferApplication: UserLoanTransfer;
-    transferOffer: UserLoanTransferOffer;
+    transferOffer?: UserLoanTransferOffer;
     userBalance: UserBalanceResponse;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   txMessage?: string | null;
   txStatus?: "idle" | "success" | "error" | null;
   isSubmtting?: boolean;
-  onConfirm: (accepter: "SELLER" | "BUYER", offerId ?: bigint) => void;
+  onConfirm: (accepter: "SELLER" | "BUYER", offerId : bigint, transferId : bigint) => void;
   accepter: "SELLER" | "BUYER";
 };
 
@@ -54,16 +54,16 @@ export function AcceptTransferDialog({
       <DialogContent className="text-foreground bg-background sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            Bạn có chắc chắn muốn chấp nhận chuyển nhượng vay này?
+            Bạn có chắc chắn muốn chấp nhận chuyển nhượng vay này 
           </DialogTitle>
-          <DialogDescription>
+          {/* <DialogDescription>
             Sau khi chấp nhận, bạn sẽ trở thành chủ mới của khoản vay.
-          </DialogDescription>
+          </DialogDescription> */}
         </DialogHeader>
         
         <div className="mt-3">
             {
-                accepter == "BUYER" && 
+                accepter == "BUYER" ?
                 <BeforeAfterCard 
                     beforeLabel="Số dư hiện tại"
                     beforeValue={formatUsdc(userBalance.usdcBalance)}
@@ -79,6 +79,17 @@ export function AcceptTransferDialog({
                     currency="USDC"
                     type="decrease"
                 />
+                :
+                <BeforeAfterCard 
+                    beforeLabel="Số dư hiện tại"
+                    beforeValue={formatUsdc(userBalance.usdcBalance)}
+                    changeLabel="Tiền nhận được sau chuyển nhượng"
+                    changeValue={formatUsdc(transferApplication.price)}
+                    afterLabel="Số dư sau khi nhận chuyển nhượng"
+                    afterValue={formatUsdc(userBalance.usdcBalance + transferApplication.price)}
+                    currency="USDC"
+                    type="increase"
+                 />
             }
         </div>
 
@@ -97,7 +108,7 @@ export function AcceptTransferDialog({
           <Button
             className="red-btn"
             onClick={() => {
-                onConfirm(accepter, transferOffer.offerId);
+                onConfirm(accepter, transferOffer ? transferOffer.offerId : BigInt(0), transferApplication.transferId);
             }}
             disabled={isSubmitting || !canRetry || (accepter == "BUYER" && userRemaining < 0)}
           >

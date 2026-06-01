@@ -14,6 +14,26 @@ export function formatDate(dateString?: string) {
   }).format(new Date(dateString));
 }
 
+export function addDateDuration(startDate: string, durationMonths: bigint): string {
+  const start = new Date(startDate);
+  const end = new Date(start.getTime());
+  end.setMonth(end.getMonth() + Number(durationMonths));
+  return end.toISOString();
+}
+
+export function subtractDate(startDate: string, endDate: string): { months: number; days: number } {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+  let days = end.getDate() - start.getDate();
+  if (days < 0) {
+    months -= 1;
+    const previousMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += previousMonth.getDate();
+  }
+  return { months, days };
+}
+
 export function shortAddress(address?: string , startChars = 6, endChars = 4) {
   if (!address) return "-";
   if (address.length <= startChars + endChars) return address;
@@ -43,5 +63,6 @@ export function cn(...inputs: any[]) {
 }
 
 export function isNotProcessing(status: string) {
+  if (!status) return false;
   return status.includes("PENDING") == false;
 }

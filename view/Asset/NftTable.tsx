@@ -21,7 +21,7 @@ import {
 
 
 
-import { shortAddress } from "@/utils";
+import { formatDate, shortAddress } from "@/utils";
 import { nftStatusLabelMap, nftStatusVariantMap, UserNft } from "@/model/User";
 
 
@@ -65,8 +65,11 @@ export function UserNftTable({ data: nfts }: NftTableProps) {
         header: sortableHeader<UserNft>("Tên NFT"),
       },
       {
-        accessorKey: "depositedAt",
-        header: sortableHeader<UserNft>("Thời gian deposit"),
+        accessorKey: "timeCreated",
+        header: sortableHeader<UserNft>("Thời gian"),
+        cell: ({ row }) => {
+          return formatDate(row.original.timeCreated);
+        },
       },
       {
         accessorKey: "status",

@@ -19,7 +19,10 @@ export type LoanStatusResponse =
   | "PENDING_ACCEPTED"
   | "ACCEPTED"
   | "PENDING_CANCELED"
-  | "CANCELED";
+  | "CANCELED"
+  | "PENDING_UPDATED"
+
+
 
 export type UserNFTResponseStatus = "DEPOSITED" | "WITHDRAWN" | "PENDING_DEPOSIT" | "PENDING_WITHDRAW" | "COLLATERALIZED";
 

@@ -54,6 +54,11 @@ export type CreateLoanTransferOfferSubmitValues = {
     transferId: bigint;
 }
 
+export type UpdateLoanTransferPriceSubmitValues = {
+    transferId: bigint;
+    newPrice: bigint;
+}
+
 export const mockLoanTransferOffersResponse: Page<UserLoanTransferOfferResponse> = {
     content: [
     {

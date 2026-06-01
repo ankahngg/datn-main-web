@@ -18,14 +18,14 @@ import { AssetTransferDialog } from "@/view/Asset/AssetTransferDialog";
 import { TransactionHistoryTable } from "@/view/Asset/TransactionHistoryTable";
 
 import { contractAddress, usdcAddress } from "@/config/app.config";
-import { useUserBalance, useUserNfts } from "@/hooks/use-user-asset";
+import { useUserBalance, useUserNfts, useUserNfts2 } from "@/hooks/use-user-asset";
 import { FullScreenError } from "@/components/shared/FullScreenError";
 import { FullScreenLoading } from "@/components/shared/FullLoadingScreen";
-import { useBankTransactions } from "@/hooks/use-bank-transactions";
+import { useBankTransactions, useBankTransactions2 } from "@/hooks/use-bank-transactions";
 import { formatDate } from "@/utils";
 import PageHeader from "@/components/shared/PageHeader";
 import { UserNft, AssetBalance, AssetTransferSubmitValues } from "@/model/User";
-import { Transaction } from "@/model/BankTransaction";
+import { BankTransaction } from "@/model/BankTransaction";
 import { UserNftTable } from "@/view/Asset/NftTable";
 
 const erc20Abi = [
@@ -84,84 +84,43 @@ export default function AssetsPage() {
   });
   
   const {data: userBalance, isLoading: userBalanceLoading, isError: userBalanceIsError, error: userBalanceError} = useUserBalance(useAccount().address);
-  const {data: userNfts, isLoading: userNftsLoading, isError: userNftsIsError, error: userNftsError} = useUserNfts(
+  const {data: userNfts, isLoading: userNftsLoading, isError: userNftsIsError, error: userNftsError} = useUserNfts2(
     {
       filter: {
         user: address,
       },
     }
   );
-  const {data: history, isLoading: historyLoading, isError: historyIsError, error: historyError} = useBankTransactions ({
+  const {data: history, isLoading: historyLoading, isError: historyIsError, error: historyError} = useBankTransactions2 ({
     filter: {
       user: address,
     },
   });
 
-  const UserNfts = useMemo((): UserNft[] => {
-    if (userNfts) {
-      return userNfts.content.map((nft) => ({
-        id: nft.id,
-        nftId: nft.nftId,
-        nftAddress: nft.nftAddress,
-        tokenId: nft.tokenId,
-        name: `NFT #${nft.nftId}`,
-        timeCreated: formatDate(nft.timeCreated),
-        status: nft.status
-        
-      }));
-    }
-    return [];
+  if (userBalanceLoading || userNftsLoading || historyLoading) {
+    return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
   }
-  , [userNfts]);
+
+   if (!userBalance || !userNfts || !history) {
+    
+    return <FullScreenError message="Lỗi khi tải dữ liệu tài sản của bạn. Vui lòng thử lại sau." onRetry={() => {}} />;
+  }
+
+
   console.log("UserNfts :", userNfts);
 
-  const availableNfts = useMemo(() => {
-    return UserNfts.filter((nft) => nft.status === "DEPOSITED" || nft.status === "COLLATERALIZED");
-  }, [UserNfts]);
+  const availableNfts = userNfts?.filter?.((nft) => nft.status === "DEPOSITED" || nft.status === "COLLATERALIZED") || [];
+  const depositedNfts = userNfts?.filter?.((nft) => nft.status === "DEPOSITED") || [];
   console.log("availableNfts :", availableNfts);
 
-   const balances = useMemo((): AssetBalance[] => {
-    if (userBalance) {
-      return [
+   const balances : AssetBalance[] = [
         { symbol: "ETHER", name: "Ethereum", amount: formatEther(userBalance.ethBalance), unit: "ETH" },
         { symbol: "USDC", name: "USD Coin", amount: formatUnits(userBalance.usdcBalance, 6), unit: "USDC" },
         { symbol: "NFT", name: "NFTs", amount: availableNfts.length.toString(), unit: "NFT" },
       ];
-    }
-    return [];
-  }, [userBalance]);
   console.log("balances :", balances);
 
-  const transactionHistory = useMemo((): Transaction[] => {
-    if (history) {
-      return history.content.map((tx) => ({
-        id: tx.id,
-        type: tx.bankAction,
-        asset: tx.bankAsset,
-        amount: tx.amount,
-        time: formatDate(tx.eventTimestamp),
-        status: tx.status,
-      }));
-    }
-    return [];
-  }
-  , [history]);
-  console.log("transactionHistory :", transactionHistory);
-
-  if (userBalanceIsError || userNftsIsError) {
-    console.error("Error loading user assets", {
-      balanceError: userBalanceError,
-      nftsError: userNftsError,
-    });
-    return <FullScreenError message="Lỗi khi tải dữ liệu tài sản của bạn. Vui lòng thử lại sau." onRetry={() => {}} />;
-  }
-
-  if (userBalanceLoading || userNftsLoading) {
-    return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
-  }
-
-  // return <FullScreenError message="Lỗi khi tải dữ liệu tài sản của bạn. Vui lòng thử lại sau." onRetry={() => {}} />;
-  // return <FullScreenLoading message="Đang tải dữ liệu tài sản của bạn..." />;
+  console.log("transactionHistory :", history);
 
   function resetTxFeedback() {
     setTxStatus(null);
@@ -290,7 +249,7 @@ export default function AssetsPage() {
             </div>
             <AssetTransferDialog
               balances={balances}
-              availableNfts={availableNfts}
+              availableNfts={depositedNfts}
               onSubmitTransfer={handleTransferSubmit}
               isSubmitting={isSubmitting}
               txStatus={txStatus}
@@ -327,7 +286,7 @@ export default function AssetsPage() {
             <span>Danh sách NFT đã gửi</span>
           </div>
 
-          <UserNftTable data={UserNfts} />
+          <UserNftTable data={userNfts} />
         </section>
 
         <section className="space-y-3">
@@ -336,7 +295,7 @@ export default function AssetsPage() {
             <span>Lịch sử giao dịch</span>
           </div>
 
-          <TransactionHistoryTable history={transactionHistory} />
+          <TransactionHistoryTable history={history} />
         </section>
       </div>
     </WalletRequired>

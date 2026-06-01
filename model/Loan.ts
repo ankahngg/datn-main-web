@@ -5,10 +5,10 @@ import { ApplicationStatusResponse, LoanStatusResponse, PayActionResponse } from
 export interface LoanFilter {
   borrower  ?: string;
   lender ?: string;
-  loanAmount ?: bigint;
-  interestRate ?: bigint;
-  duration ?: bigint;
-  loanStatus ?: LoanStatusResponse;
+  loanAmount ?: number;
+  interestRate ?: number;
+  duration ?: number;
+  status ?: LoanStatusResponse;
   fromTimeCreated?: string; // local date-time string
   toTimeCreated?: string;   // local date-time string
 }
@@ -25,7 +25,7 @@ export interface UserLoanResponse {
   duration: bigint;
   totalAmountHaveToPay: bigint;
   amountPaid: bigint;
-  loanStatus: LoanStatusResponse;
+  status: LoanStatusResponse;
   timePaid?: string;
   timeAuction?: string;
   timeLiquidated?: string;
@@ -45,7 +45,7 @@ export interface UserLoan {
   duration: bigint;
   totalAmountHaveToPay: bigint;
   amountPaid: bigint;
-  loanStatus: LoanStatusResponse;
+  status: LoanStatusResponse;
   timePaid?: string;
   timeAuction?: string;
   timeLiquidated?: string;
@@ -54,9 +54,9 @@ export interface UserLoan {
   remainingAmount: bigint; // totalAmountHaveToPay - amountPaid
 }
 
-export const UserLoanStatusVariantMap: Record<LoanStatusResponse, "default" | "success" | "warning" | "danger"> = {
+export const UserLoanStatusVariantMap: Record<LoanStatusResponse, "default" | "success" | "warning" | "danger" | "secondary"> = {
   PENDING_CREATED: "warning",
-    CREATED: "default",
+    CREATED: "secondary",
     PENDING_PAID: "warning",
     PAID: "success",
     PENDING_AUCTION: "warning",
@@ -100,7 +100,7 @@ export const mockLoans: Page<UserLoanResponse> = {
       duration: BigInt("6"),
       totalAmountHaveToPay: BigInt("540000000"),
       amountPaid: BigInt("200000000"),
-      loanStatus: "PENDING_PAID",
+      status: "PENDING_PAID",
       timePaid: "2026-04-05T11:00:00Z",
       timeCreated: "2026-03-20T10:30:00Z",
       createdAt: "2026-03-20T10:30:00Z",
@@ -117,7 +117,7 @@ export const mockLoans: Page<UserLoanResponse> = {
       duration: BigInt("12"),
       totalAmountHaveToPay: BigInt("1380000000"),
       amountPaid: BigInt("1380000000"),
-      loanStatus: "PAID",
+      status: "PAID",
       timePaid: "2026-03-01T15:20:00Z",
       timeCreated: "2026-02-12T08:00:00Z",
       createdAt: "2026-02-12T08:00:00Z",
@@ -134,7 +134,7 @@ export const mockLoans: Page<UserLoanResponse> = {
       duration: BigInt("9"),
       totalAmountHaveToPay: BigInt("880000000"),
       amountPaid: BigInt("300000000"),
-      loanStatus: "CREATED",
+      status: "CREATED",
       timePaid: "2026-04-10T11:15:00Z",
       timeCreated: "2026-04-01T14:10:00Z",
       createdAt: "2026-04-01T14:10:00Z",
@@ -151,7 +151,7 @@ export const mockLoans: Page<UserLoanResponse> = {
       duration: BigInt("8"),
       totalAmountHaveToPay: BigInt("1064000000"),
       amountPaid: BigInt("0"),
-      loanStatus: "PENDING_CREATED",
+      status: "PENDING_CREATED",
       timeCreated: "2026-04-18T09:45:00Z",
       createdAt: "2026-04-18T09:45:00Z",
     },
@@ -167,7 +167,7 @@ export const mockLoans: Page<UserLoanResponse> = {
       duration: BigInt("5"),
       totalAmountHaveToPay: BigInt("654000000"),
       amountPaid: BigInt("600000000"),
-      loanStatus: "PENDING_AUCTION",
+      status: "PENDING_AUCTION",
       timeAuction: "2026-04-20T10:00:00Z",
       timeCreated: "2026-04-10T12:00:00Z",
       createdAt: "2026-04-10T12:00:00Z",
@@ -184,7 +184,7 @@ export const mockLoans: Page<UserLoanResponse> = {
       duration: BigInt("7"),
       totalAmountHaveToPay: BigInt("777000000"),
       amountPaid: BigInt("0"),
-      loanStatus: "AUCTION",
+      status: "AUCTION",
       timeAuction: "2026-04-22T14:30:00Z",
       timeCreated: "2026-04-12T16:20:00Z",
       createdAt: "2026-04-12T16:20:00Z",

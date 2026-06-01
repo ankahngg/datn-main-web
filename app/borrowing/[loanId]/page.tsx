@@ -28,14 +28,11 @@ import {
 } from "@/model/LoanApplication";
 import { LoanOffer, LoanOfferSubmitValues } from "@/model/LoanOffer";
 import {
-  useLoanOffersByApplicationId,
   useLoanOffersByApplicationId2,
-  useUserLoanApplicationById,
   useUserLoanApplicationById2,
 } from "@/hooks/use-get-loan-application";
 import { FullScreenError } from "@/components/shared/FullScreenError";
-import { useUserBalance, useUserNFTById, useUserNFTById2 } from "@/hooks/use-user-asset";
-import { UserNft } from "@/model/User";
+import { useUserBalance, useUserBalance2, useUserNFTById2 } from "@/hooks/use-user-asset";
 import { CancelOfferDialog } from "@/view/Borrowing/CancelOfferDialog";
 import { AcceptOfferDialog } from "@/view/Borrowing/AcceptOfferDialog";
 
@@ -83,8 +80,9 @@ export default function LoanOffersPage() {
   const { data: userNft, isLoading: isLoadingUserNft } = useUserNFTById2(
     userLoanApplication?.nftId,
   );
+  
   const { data: userBalance, isLoading: userBalanceIsLoading } =
-    useUserBalance(address);
+    useUserBalance2(address);
 
   if (
     isLoadingLoanApplication ||
@@ -108,6 +106,7 @@ export default function LoanOffersPage() {
       />
     );
   }
+  console.log("User NFT:", userNft);
 
   const application = userLoanApplication;
 
@@ -183,8 +182,9 @@ export default function LoanOffersPage() {
   };
 
   const handleOpenAcceptOfferDialog = (index: number, offerType: string) => {
-    if (offerType === "borrower") setSelectedCancelOffer(borrowerOffers[index]);
-    else setSelectedCancelOffer(lenderOffers[index]);
+    if (offerType === "borrower") setSelectedAcceptOffer(borrowerOffers[index]);
+    else setSelectedAcceptOffer(lenderOffers[index]);
+    console.log("Selected offer to accept:", offerType === "borrower" ? borrowerOffers[index] : lenderOffers[index]);
     setIsAcceptDialogOpen(true);
     setAcceptTxStatus(null);
     setAcceptTxMessage(null);
@@ -229,6 +229,7 @@ export default function LoanOffersPage() {
 
   const handleAcceptOffer = async () => {
     const selectedAcceptOfferId = selectedAcceptOffer?.offerId;
+    console.log("Selected offer to accept:", selectedAcceptOffer);
 
     if (!selectedAcceptOfferId) {
       return;
@@ -281,16 +282,7 @@ export default function LoanOffersPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {accpeptedOffer && (
-                  <>
-                    <div className="sm:col-span-2 lg:col-span-4">
-                      <p className="text-green-600 font-heading bg-foreground/10 px-3 py-2 rounded-xl w-fit">
-                        Đơn vay này đã được chấp nhận bởi đề nghị với Offer -{" "}
-                        {accpeptedOffer.id}
-                      </p>
-                    </div>
-                  </>
-                )}
+                
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <DetailCard
                     label="Người vay"
@@ -317,13 +309,23 @@ export default function LoanOffersPage() {
                   <DetailCard
                     label="Trạng thái"
                     value={
-                      <Badge
-                        variant={
-                          applicationStatusVariantMap[application.status]
+                      <>
+                        <Badge
+                          variant={
+                            applicationStatusVariantMap[application.status]
+                          }
+                        >
+                          {applicationStatusLabelMap[application.status]}
+                        </Badge>
+                        {
+                          application.status === "ACCEPTED" && (
+                            <span className="ml-2 text-sm ">
+                              - #{application.acceptedOfferId}
+                            </span>
+                          )
                         }
-                      >
-                        {applicationStatusLabelMap[application.status]}
-                      </Badge>
+                      </>
+                      
                     }
                     className="detail-card-bg"
                   />
@@ -393,7 +395,7 @@ export default function LoanOffersPage() {
                           className="detail-card-bg"
                         />
                       )}
-                      {nft.tokenId && (
+                      {nft.tokenId != undefined && (
                         <DetailCard
                           label="Token ID"
                           value={nft.tokenId}
@@ -423,7 +425,7 @@ export default function LoanOffersPage() {
               txStatus={txStatus}
               txMessage={txMessage}
               onResetStatus={handleResetStatus}
-              enableButton={true}
+              enableButton={application.status == "CREATED"}
             />
             <section className="space-y-4">
               <div className="flex flex-col gap-2">
@@ -483,11 +485,11 @@ export default function LoanOffersPage() {
             )}
 
             {/* // Accept Offer Dialog */}
-            {selectedCancelOffer && (
+            {selectedAcceptOffer && (
               <AcceptOfferDialog
                 userBalance={userBalance}
                 application={application}
-                offer={selectedCancelOffer}
+                offer={selectedAcceptOffer}
                 open={isAcceptDialogOpen}
                 onOpenChange={setIsAcceptDialogOpen}
                 title="Xác nhận chấp nhận offer"
