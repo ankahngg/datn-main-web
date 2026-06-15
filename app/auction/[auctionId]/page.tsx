@@ -69,6 +69,13 @@ function Page() {
     });
   const { data: userBalance, isLoading: userBalanceIsLoading } =
     useUserBalance2(address);
+  
+  const canBid = auction && auction.status === "CREATED" && new Date() < new Date(auction.timeEnd) || false;
+  const canFinalize =
+    auction &&
+    auction.status === "CREATED" &&
+    auction.timeEnd &&
+    new Date() > new Date(auction.timeEnd) || false;
 
   if (isLoading || userBalanceIsLoading || auctionTransactionsIsLoading)
     return <FullScreenLoading />;
@@ -171,16 +178,16 @@ function Page() {
             <CardTitle>Chi tiết đấu giá #{auction.auctionId}</CardTitle>
           </CardHeader>
 
-          <CardContent className="gap-3 grid sm:grid-cols-2 lg:grid-cols-4">
+          <CardContent className="gap-3 grid sm:grid-cols-2 lg:grid-cols-3">
             <DetailCard
               label="Người trả giá cao nhất"
               value={auction.highestBidder || "Chưa có người mua"}
-              className="col-span-4 detail-card-bg"
+              className="col-span-2 detail-card-bg"
             />
             <DetailCard
               label="Giá cao nhất hiện tại"
               value={formatUsdc(auction.highestBid)}
-              className="detail-card-bg col-span-4 "
+              className="detail-card-bg col-span-1 "
             />
             <DetailCard
               label="Khoản vay đấu giá"
@@ -239,13 +246,13 @@ function Page() {
               txMessage={txMessage}
               txStatus={txStatus}
               isSubmitting={isSubmitting}
-              enabled={auction.status == "CREATED"}
+              enabled={canBid}
               open={openBidDialog}
               onOpenChange={setOpenBidDialog}
             />
-            {auction.timeEnd &&
-              new Date() > new Date(auction.timeEnd) &&
-              auction.status == "CREATED" || true && (
+            {
+              canFinalize
+             && (
                 <Button
                   className="my-btn"
                   onClick={() => setOpenFinalizeDialog(true)}

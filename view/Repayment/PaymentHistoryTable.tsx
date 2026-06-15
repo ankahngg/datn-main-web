@@ -19,19 +19,33 @@ import {
   useDataTableState,
 } from "@/components/shared/data-table";
 
-
 import { LoanPayTransaction } from "@/model/LoanPayTransaction";
 import { formatDate, formatUsdc, shortAddress } from "@/utils";
-import { transactionStatusVariantMap, transactionStatusLabelMap } from "@/model/BankTransaction";
-import { UserLoanStatusVariantMap, UserLoanStatusLabelMap, payActionLabelMap, payActionVariantMap } from "@/model/Loan";
+import {
+  transactionStatusVariantMap,
+  transactionStatusLabelMap,
+} from "@/model/BankTransaction";
+import {
+  UserLoanStatusVariantMap,
+  UserLoanStatusLabelMap,
+  payActionLabelMap,
+  payActionVariantMap,
+} from "@/model/Loan";
 
 type PaymentHistoryTableProps = {
   history: LoanPayTransaction[];
 };
 
 export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
-  const { sorting, setSorting, columnFilters, setColumnFilters, globalFilter, setGlobalFilter, clearFilters} = useDataTableState();
-  
+  const {
+    sorting,
+    setSorting,
+    columnFilters,
+    setColumnFilters,
+    globalFilter,
+    setGlobalFilter,
+    clearFilters,
+  } = useDataTableState();
 
   const columns = React.useMemo<ColumnDef<LoanPayTransaction>[]>(
     () => [
@@ -44,7 +58,11 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
         header: sortableHeader<LoanPayTransaction>("Hành động"),
         cell: ({ row }) => {
           const action = row.original.action;
-          return <Badge variant={payActionVariantMap[action]}>{payActionLabelMap[action]}</Badge>;
+          return (
+            <Badge variant={payActionVariantMap[action]}>
+              {payActionLabelMap[action]}
+            </Badge>
+          );
         },
       },
       {
@@ -71,18 +89,22 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
           return <span>{formatUsdc(total)} USDC</span>;
         },
       },
-      
+
       {
         accessorKey: "txHash",
         header: sortableHeader<LoanPayTransaction>("TX Hash"),
         cell: ({ row }) => {
           const txHash = row.original.txHash;
+          const etherscanUrl = `https://sepolia.etherscan.io/tx/${txHash}`;
           return (
-            <span className="font-mono text-xs ">
-              {
-                shortAddress(txHash)
-              }
-            </span>
+            <a
+    href={etherscanUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="font-mono text-xs hover:underline hover:text-blue-600"
+  >
+    {shortAddress(txHash)}
+  </a>
           );
         },
       },
@@ -103,11 +125,13 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
         header: sortableHeader<LoanPayTransaction>("Thời gian"),
         cell: ({ row }) => {
           const time = row.original.timeCreated;
-          return <span className="text-sm text-foreground">{formatDate(time)}</span>;
+          return (
+            <span className="text-sm text-foreground">{formatDate(time)}</span>
+          );
         },
       },
     ],
-    []
+    [],
   );
 
   const table = useReactTable({
@@ -140,19 +164,23 @@ export function PaymentHistoryTable({ history }: PaymentHistoryTableProps) {
         onSearchChange={setGlobalFilter}
         searchPlaceholder="Tìm theo ID, TX Hash, thời gian..."
         statusFilter={{
-          value: (table.getColumn("status")?.getFilterValue() as string) ?? "all",
+          value:
+            (table.getColumn("status")?.getFilterValue() as string) ?? "all",
           onChange: (value) =>
-            table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value),
+            table
+              .getColumn("status")
+              ?.setFilterValue(value === "all" ? undefined : value),
 
           options: [
             { label: "Tất cả", value: "all" },
-            ...Object.entries(transactionStatusLabelMap).map(([value, label]) => ({
-              label,
-              value,
-            })),
-          ]
-        }
-        }
+            ...Object.entries(transactionStatusLabelMap).map(
+              ([value, label]) => ({
+                label,
+                value,
+              }),
+            ),
+          ],
+        }}
         onClearFilters={() => {
           clearFilters();
           table.setPageIndex(0);

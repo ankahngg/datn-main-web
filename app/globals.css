@@ -88,7 +88,9 @@
   --main-page-padding-x: 3rem;
   --main-page-padding-y: 2rem;
   --devider-color: oklch(37.15% 0.00004 271.152);
-
+  --success-color: oklch(0.6401 0.1751 146.74)
+  --error-color: oklch(0.577 0.245 27.325);
+  --warning-color: oklch(0.844171 0.172159 84.9338)
 }
 
 .dark {
@@ -156,4 +158,8 @@
 
 .red-text {
   @apply text-red-400
+}
+
+.green-btn {
+  @apply border-emerald-500/30 bg-emerald-500/15 text-foreground hover:bg-emerald-500 hover:text-black
 }

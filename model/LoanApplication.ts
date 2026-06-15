@@ -24,7 +24,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
     {
       id: 1,
       applicationId: BigInt("1001"),
-      borrower: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7098",
+      borrower: "0xD838d5d1B7d03544BF95Aaa8FC5B0EF3a4088a95",
       collateralType: "ETHER",
       collateralAmount: BigInt("50000000000000000"), // 0.05 ETH
       status: "CREATED",
@@ -35,7 +35,7 @@ export const mockLoanApplications: Page<UserLoanApplicationResponse> = {
     {
       id: 2,
       applicationId: BigInt("1002"),
-      borrower: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+      borrower: "0xD838d5d1B7d03544BF95Aaa8FC5B0EF3a4088a95",
       collateralType: "NFT",
       collateralAmount: BigInt("1"), // 1 NFT
       nftId: BigInt("1001"),

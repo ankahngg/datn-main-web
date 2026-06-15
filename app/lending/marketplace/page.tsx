@@ -23,7 +23,9 @@ export default function LendingMarketplacePage() {
 		data: userLoanApplications,
 		isLoading: isLoadingLoanApplications,
 	} = useUserLoanApplications2({
-		filter: {},
+		filter: {
+			status: "CREATED",
+		},
 		pageable: { page: 0, size: 1000, sort: "createdAt,DESC" },
 	});
 
@@ -36,7 +38,7 @@ export default function LendingMarketplacePage() {
 		return <FullScreenError message={COMMON_ERROR_MESSAGE} />;
 	}
 
-	const filteredApplications = userLoanApplications.filter((app) => app.status === "CREATED" || app.status === "PENDING_CREATED");
+	const filteredApplications = userLoanApplications.filter((app) => app.borrower.toLowerCase() !== address?.toLowerCase());
 
 	return (
 		<WalletRequired

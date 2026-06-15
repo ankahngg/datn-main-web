@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, MoreHorizontal, History, Wallet, XCircle } from "lucide-react";
+import { Eye, MoreHorizontal, History, Wallet, XCircle, Check } from "lucide-react";
 import {
   type ColumnDef,
   getCoreRowModel,
@@ -178,10 +178,10 @@ export function BorrowerLoanTable({
                 <DropdownMenuItem
                   onClick={() => onAction("END_LOAN", loan)}
                   disabled={!isPayable}
-                  variant="destructive"
-                  className="cursor-pointer"
+                  // variant="default"
+                  className="cursor-pointer green-btn"
                 >
-                  <XCircle className="size-4" />
+                  <Check className="size-4" />
                   Kết thúc khoản vay
                 </DropdownMenuItem>
               </DropdownMenuContent>

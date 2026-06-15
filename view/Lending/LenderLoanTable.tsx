@@ -28,7 +28,7 @@ import {
   sortableHeader,
   useDataTableState,
 } from "@/components/shared/data-table";
-import { shortAddress } from "@/utils";
+import { addDateDuration, isNotProcessing, shortAddress } from "@/utils";
 import { formatUnits } from "viem";
 import { UserLoan, UserLoanStatusLabelMap, UserLoanStatusVariantMap } from "@/model/Loan";
 
@@ -100,10 +100,11 @@ export function LenderLoanTable({ loans, isLoading = false, onAction }: LendingT
       },
       {
         id: "actions",
-        header: () => <span className="text-foreground">Hành động</span>,
+        header: () => <span className="-ml-3 bg-sidebar text-muted-foreground text-sm">Hành động</span>,
         cell: ({ row }) => {
           const loan = row.original;
-
+          // const canAuction = isNotProcessing(loan.status) && addDateDuration(loan.timeCreated, loan.duration) < new Date().toISOString();
+          const canAuction = isNotProcessing(loan.status);
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -128,7 +129,9 @@ export function LenderLoanTable({ loans, isLoading = false, onAction }: LendingT
                   Xem đơn vay
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onAction("START_AUCTION", loan)} className="cursor-pointer"
-                  variant="destructive">
+                  variant="destructive"
+                  disabled={!canAuction}
+                  >
                   <Scale className="size-4"/>
                   Đấu giá khoản vay
                 </DropdownMenuItem>

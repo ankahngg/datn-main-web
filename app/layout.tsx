@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import Header from "@/components/shared/header";
 import { Providers } from "@/provider/Providers";
 import { cn } from "@/utils";
+import WalletRequired from "@/components/wallet-required";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,7 +53,13 @@ export default function RootLayout({
 
                 {/* <SidebarTrigger /> */}
                 <Header />
+                 <WalletRequired
+                      title="Trang tài sản yêu cầu kết nối ví"
+                      message="Kết nối ví để xem số dư, quản lý NFT và thực hiện giao dịch gửi/rút tài sản."
+                    >
                 <div className="mt-8">{children}</div>
+
+                    </WalletRequired>
               </main>
             </SidebarProvider>
           </Providers>

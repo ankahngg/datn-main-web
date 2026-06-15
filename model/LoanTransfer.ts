@@ -73,7 +73,7 @@ export const mockLoanTransfersResponse: Page<UserLoanTransferResponse> = {
     id: 1,
     transferId: BigInt(1001),
     loanId: BigInt(2001),
-    seller: "0xSellerAddress1",
+    seller: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
     buyer: "0xBuyerAddress1",
     price: BigInt(5000000000), // 5000 USDC with 6 decimals
     status: "PENDING_CREATED",
@@ -83,7 +83,7 @@ export const mockLoanTransfersResponse: Page<UserLoanTransferResponse> = {
     id: 2,
     transferId: BigInt(1002),
     loanId: BigInt(2002),
-    seller: "0xSellerAddress2",
+    seller: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
     buyer: "0xBuyerAddress2",
     price: BigInt(1000000000), // 1000 USDC with 6 decimals
     status: "ACCEPTED",
@@ -95,7 +95,7 @@ export const mockLoanTransfersResponse: Page<UserLoanTransferResponse> = {
     id: 3,
     transferId: BigInt(1003),
     loanId: BigInt(2003),
-    seller: "0xSellerAddress3",
+    seller: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
     buyer: "0xBuyerAddress3",
     price: BigInt(7500000000), // 7500 USDC with 6 decimals
     status: "CANCELED",
@@ -106,7 +106,7 @@ export const mockLoanTransfersResponse: Page<UserLoanTransferResponse> = {
     id: 4,
     transferId: BigInt(1004),
     loanId: BigInt(2004),
-    seller: "0xSellerAddress4",
+    seller: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     price: BigInt(2000000000), // 2000 USDC with 6 decimals
     status: "CREATED",
     timeCreated: "2024-06-05T14:00:00Z",

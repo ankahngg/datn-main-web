@@ -91,10 +91,10 @@ export const mockAuctionsResponse: Page<AuctionResponse> = {
             auctionId: BigInt(3002),
             loanId: BigInt(2002),   
             startPrice: BigInt(1000000000), //1000 USDC
-            timeStart: "2024-06-11T10:00:00Z",
-            timeEnd: "2024-06-16T10:00:00Z",
+            timeStart: "2026-06-08T10:00:00Z",
+            timeEnd: "2026-06-16T10:00:00Z",
             highestBid: BigInt(1200000000), //1200 USDC
-            highestBidder: "0xBidderAddress2",
+            highestBidder: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
             status: "CREATED",
             timeCreated: "2024-06-02T11:00:00Z",
             createdAt: "2024-06-02T11:00:00Z",

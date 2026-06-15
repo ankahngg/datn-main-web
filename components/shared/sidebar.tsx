@@ -24,7 +24,9 @@ import { Boxes } from "lucide-react";
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { formatDate } from "@/utils";
+import { usePathname } from "next/navigation";
 function Leftbar() {
+  const pathname = usePathname();
   return (
     <Sidebar>
       <div className="p-4">
@@ -46,7 +48,9 @@ function Leftbar() {
                 <div className="italic">Múi giờ: GMT+7 (Việt Nam)</div>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild
+              isActive={pathname === "/dashboard"}
+              >
                 <Link href="/dashboard" className="font-heading">
                   <ChartColumn className="mr-2" />
                   Trang chủ
@@ -54,7 +58,9 @@ function Leftbar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild
+                  isActive={pathname === "/assets"}
+              >
                 <Link href="/assets" className="font-heading">
                   <Landmark className="mr-2" />
                   Gửi/rút tài sản
@@ -63,7 +69,9 @@ function Leftbar() {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild
+                  isActive={pathname === "/borrowing"}
+              >
                 <Link href="/borrowing" className="font-heading">
                   <FileText className="mr-2" />
                   Tạo đơn vay
@@ -72,7 +80,9 @@ function Leftbar() {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild
+                 isActive={pathname === "/payment"}
+              >
                 <Link href="/payment" className="font-heading">
                   <HandCoins className="mr-2" />
                   Trả vay
@@ -81,7 +91,8 @@ function Leftbar() {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild
+                  isActive={pathname === "/lending"}>
                 <Link href="/lending" className="font-heading">
                   <Banknote className="mr-2" />
                   Cho vay
@@ -90,7 +101,8 @@ function Leftbar() {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild
+                  isActive={pathname === "/transfer"}>
                 <Link href="/transfer" className="font-heading">
                   <ArrowRightLeft className="mr-2" />
                   Chuyển nhượng vay
@@ -99,16 +111,8 @@ function Leftbar() {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/activity" className="font-heading">
-                  <ActivitySquare className="mr-2" />
-                  Hoạt động
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild
+                  isActive={pathname === "/auction"}>
                 <Link href="/auction" className="font-heading">
                   <Scale className="mr-2" />
                   Đấu giá

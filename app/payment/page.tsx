@@ -60,6 +60,8 @@ export default function RepaymentPage() {
 
   // Handle action buttons
   const handleTableAction = (action: RepaymentActionType, loan: UserLoan) => {
+    setTxStatus(null);
+    setTxMessage(null);
     setSelectedLoan(loan);
 
     switch (action) {

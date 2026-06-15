@@ -283,7 +283,7 @@ export default function LoanOffersPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <DetailCard
                     label="Người vay"
                     value={application.borrower}

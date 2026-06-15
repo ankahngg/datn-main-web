@@ -35,7 +35,7 @@ export interface UserNftResponse {
 
 
 export const mockBalance: UserBalanceResponse = {
-  userWalletAddress: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+  userWalletAddress: "0xD838d5d1B7d03544BF95Aaa8FC5B0EF3a4088a95",
   usdcBalance: BigInt("1000000000"), // 1000 USDC with 6 decimals
   ethBalance: BigInt("50000000000000000"), // 0.05 ETH with 18 decimals
 };
@@ -93,9 +93,9 @@ export const mockNftsResponse: Page<UserNftResponse> = {
     {
       id: 1,
         nftId: BigInt("1001"),
-        user: "0x1234...abcd",
-        nftAddress: "0x5678...efgh",
-        tokenId: BigInt("1"),
+        user: "0xD838d5d1B7d03544BF95Aaa8FC5B0EF3a4088a95",
+        nftAddress: "0xE7fC53AB9634aA4005fd6Ac26fE46570Bf112023",
+        tokenId: BigInt("0"),
         status: "DEPOSITED",
         timeCreated: "2024-01-01T12:00:00Z",
         createdAt: "2024-01-01T12:00:00Z",

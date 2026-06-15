@@ -18,7 +18,7 @@ export async function getUserLoanApplications({
     console.log("Returning mock loan applications with filter:", filter, "and pageable:", pageable);
     
     const filteredContent = mockLoanApplications.content.filter(app => {
-      if (filter.borrower && app.borrower !== filter.borrower) {
+      if (filter.borrower && app.borrower.toLowerCase() !== filter.borrower.toLowerCase()) {
         return false;
       }
       return true;

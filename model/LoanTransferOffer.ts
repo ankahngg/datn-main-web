@@ -95,11 +95,11 @@ export const mockLoanTransferOffersResponse: Page<UserLoanTransferOfferResponse>
         id: 4,
         offerId: BigInt("3004"),
         applicationId: BigInt("1004"),
-        requester: "0xRequesterAddress4",
-        price: BigInt("2000000000"), // 2000 USDC with 6 decimals
+        requester: "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+        price: BigInt("1800000000"), // 2000 USDC with 6 decimals
         status: "CREATED",
-        timeCreated: "2024-06-04T13:00:00Z",
-        createdAt: "2024-06-04T13:00:00Z",
+        timeCreated: "2024-06-06T13:00:00Z",
+        createdAt: "2024-06-06T13:00:00Z",
     }
     ],
     totalElements: 4,

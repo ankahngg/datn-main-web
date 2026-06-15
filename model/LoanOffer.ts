@@ -45,6 +45,32 @@ export const mockLoanOffers: Page<UserLoanOfferResponse> = {
       createdAt: "2024-04-02T12:00:00Z",
     },
     {
+      id: 2,
+      offerId: BigInt("2010"),
+      applicationId: BigInt("1001"),
+      requester: "0xD838d5d1B7d03544BF95Aaa8FC5B0EF3a4088a95",
+      loanAmount: BigInt("1000000000"), // 1000 USDC with 6 decimals
+      interestRate: BigInt("5"), // 3% monthly
+      duration: BigInt("10"), // 6 months
+      status: "CREATED",
+      timeCreated: "2024-04-02T12:00:00Z",
+      timeCancelled: "2024-04-04T14:20:00Z",
+      createdAt: "2024-04-02T12:00:00Z",
+    },
+    {
+      id: 2,
+      offerId: BigInt("2011"),
+      applicationId: BigInt("1001"),
+      requester: "0xD838d5d1B7d03544BF95Aaa8FC5B0EF3a4088a95",
+      loanAmount: BigInt("1000000000"), // 1000 USDC with 6 decimals
+      interestRate: BigInt("4"), // 3% monthly
+      duration: BigInt("10"), // 6 months
+      status: "CANCELED",
+      timeCreated: "2024-04-02T12:00:00Z",
+      timeCancelled: "2024-04-04T14:20:00Z",
+      createdAt: "2024-04-02T12:00:00Z",
+    },
+    {
       id: 3,
       offerId: BigInt("2003"),
       applicationId: BigInt("1004"),
@@ -100,7 +126,7 @@ export const mockLoanOffers: Page<UserLoanOfferResponse> = {
       loanAmount: BigInt("2000000000"), // 2000 USDC with 6 decimals
       interestRate: BigInt("7"), // 7% monthly
       duration: BigInt("15"), // 15 months
-      status: "CREATED",
+      status: "PENDING_CREATED",
       timeCreated: "2024-04-20T10:00:00Z",
       createdAt: "2024-04-20T10:00:00Z",
     }
