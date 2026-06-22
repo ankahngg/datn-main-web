@@ -57,7 +57,7 @@ export default function RootLayout({
                       title="Trang tài sản yêu cầu kết nối ví"
                       message="Kết nối ví để xem số dư, quản lý NFT và thực hiện giao dịch gửi/rút tài sản."
                     >
-                <div className="mt-8">{children}</div>
+                    <div className="mt-8">{children}</div>
 
                     </WalletRequired>
               </main>

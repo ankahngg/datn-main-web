@@ -1,6 +1,7 @@
 import { LoanOfferFilter, mockLoanOffers, UserLoanOfferResponse } from "@/model/LoanOffer";
 import { Page, Pageable, request } from "../api";
 import { LoanFilter } from "@/model/Loan";
+import { useMockData } from "@/config/app.config";
 
 export interface LoanOfferParams {
   filter: LoanOfferFilter;
@@ -13,7 +14,7 @@ export async function getUserLoanOffers({
   pageable, 
 }: LoanOfferParams) {
 
-    if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+    if (useMockData) {
       console.log("Returning mock loan offers with filter:", filter, "and pageable:", pageable);
       return mockLoanOffers;
     }
@@ -34,7 +35,7 @@ export async function getUserLoanOffers({
 
 // Get details of a specific loan offer by its ID
 export async function getUserLoanOfferById(offerId: bigint) {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock loan offer for offerId:", offerId);
     const val = mockLoanOffers.content.find(offer => offer.offerId === offerId) ?? null;
     if (!val) throw new Error(`Mock loan offer with offerId ${offerId} not found`);
@@ -49,7 +50,7 @@ export async function getUserLoanOfferById(offerId: bigint) {
 
 // Get loan offers for a specific loan application by the application's ID
 export async function getLoanOffersByApplicationId(applicationId: bigint) : Promise<Page<UserLoanOfferResponse>> {
-    if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+    if (useMockData) {
         console.log("Returning mock loan offers for applicationId:", applicationId);
         return {
             content: mockLoanOffers.content.filter(offer => offer.applicationId === applicationId),

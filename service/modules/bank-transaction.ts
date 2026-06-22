@@ -1,4 +1,5 @@
 
+import { useMockData } from "@/config/app.config";
 import { Page, Pageable, request } from "../api";
 import { BankTransactionFilter, BankTransactionResponse, mockBankTransactions } from "@/model/BankTransaction";
 
@@ -14,7 +15,7 @@ export async function getBankTransactions({
   pageable,
 }: BankTransactionHistoryParams) {
 
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock bank transactions with filter:", filter, "and pageable:", pageable);
     return mockBankTransactions;
   }

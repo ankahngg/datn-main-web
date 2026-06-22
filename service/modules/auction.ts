@@ -1,5 +1,6 @@
 import { AuctionFilter, AuctionResponse, mockAuctionsResponse } from "@/model/Auction";
 import { Page, Pageable, request } from "../api";
+import { useMockData } from "@/config/app.config";
 
 export interface AuctionParams {
   filter: AuctionFilter;
@@ -13,7 +14,7 @@ export async function getAuctions({
   filter,
   pageable,
 }: AuctionParams): Promise<Page<AuctionResponse>> {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock auctions with filter:", filter, "and pageable:", pageable);
     return mockAuctionsResponse;
   }
@@ -36,7 +37,7 @@ export async function getAuctions({
  * Get a specific auction by ID
  */
 export async function getAuctionById(auctionId: bigint): Promise<AuctionResponse> {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock auction for auctionId:", auctionId);
     const val = mockAuctionsResponse.content.find(auction => auction.auctionId === auctionId) ?? null;
     if (!val) throw new Error(`Mock auction with auctionId ${auctionId} not found`);

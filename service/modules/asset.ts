@@ -1,4 +1,5 @@
 
+import { useMockData } from "@/config/app.config";
 import { Page, Pageable, request } from "../api";
 import { mockBalance, mockNftsResponse, UserBalanceResponse, UserNftFilter, UserNftResponse } from "@/model/User";
 
@@ -11,7 +12,7 @@ export interface UserNftParams {
 // Get the balance of a user by their wallet address
 export async function getUserBalance(address: string) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
-  if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if(useMockData) {
     console.log("Returning mock balance for user:", address);
     return mockBalance;
   }
@@ -27,7 +28,7 @@ export async function getUserBalance(address: string) {
 // Get the NFTs owned by a user by their wallet address
 export async function getUserNfts(options: UserNftParams) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
-  if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if(useMockData) {
     console.log("Returning mock NFTs for user:", options.filter.user);
     return mockNftsResponse;
   }
@@ -47,7 +48,7 @@ export async function getUserNfts(options: UserNftParams) {
 
 export async function getUserNftsById(nftId: bigint) {
   console.log("DEV environment:", process.env.NEXT_PUBLIC_DEV);
-  if(process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if(useMockData) {
     console.log("Returning mock NFT for ID:", nftId);
     const val = mockNftsResponse.content.find(nft => nft.nftId === nftId) ?? null;
     if (!val) throw new Error(`Mock NFT with ID ${nftId} not found`);

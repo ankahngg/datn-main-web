@@ -4,6 +4,7 @@ import {
   mockLoanPayTransactionResponse,
 } from "@/model/LoanPayTransaction";
 import { Page, Pageable, request } from "../api";
+import { useMockData } from "@/config/app.config";
 
 /**
  * Get loan payment history
@@ -17,7 +18,7 @@ export async function getLoanPaymentHistory({
   filter,
   pageable,
 }: LoanPayTransactionParams): Promise<Page<LoanPayTransactionResponse>> {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log(
       "Returning mock loan payment history with filter:",
       filter,

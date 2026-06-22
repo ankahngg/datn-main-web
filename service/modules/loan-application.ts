@@ -1,4 +1,5 @@
 
+import { useMockData } from "@/config/app.config";
 import { Page, Pageable, request } from "../api";
 import { LoanFilter } from "@/model/Loan";
 import { LoanApplicationFilter, mockLoanApplications, UserLoanApplicationResponse } from "@/model/LoanApplication";
@@ -14,7 +15,7 @@ export async function getUserLoanApplications({
   pageable, 
 }: LoanApplicationParams) {
 
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock loan applications with filter:", filter, "and pageable:", pageable);
     
     const filteredContent = mockLoanApplications.content.filter(app => {
@@ -50,7 +51,7 @@ export async function getUserLoanApplications({
 
 // Get details of a specific loan application by its ID
 export async function getUserLoanApplicationById(applicationId: bigint) {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock loan application for applicationId:", applicationId);
     const val = mockLoanApplications.content.find(app => app.applicationId === applicationId) ?? null;
     if (!val) throw new Error(`Mock loan application with applicationId ${applicationId} not found`);

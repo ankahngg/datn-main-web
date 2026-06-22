@@ -2,6 +2,7 @@ import { LoanFilter, mockLoans, UserLoanResponse } from "@/model/Loan";
 
 import { Page, Pageable, request } from "../api";
 import { LoanPayTransactionResponse, mockLoanPayTransactionResponse } from "@/model/LoanPayTransaction";
+import { useMockData } from "@/config/app.config";
 
 
 
@@ -17,7 +18,7 @@ export async function getLoans({
   filter,
   pageable,
 }: LoanParams): Promise<Page<UserLoanResponse>> {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock loans with filter:", filter, "and pageable:", pageable);
     return mockLoans;
   }
@@ -37,7 +38,7 @@ export async function getLoans({
 }
 
 export async function getLoanById(loanId: bigint): Promise<UserLoanResponse> {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+  if (useMockData) {
     console.log("Returning mock loan for loanId:", loanId);
     const val = mockLoans.content.find(loan => loan.loanId === loanId) ?? null;
     if (!val) throw new Error(`Mock loan with loanId ${loanId} not found`);
