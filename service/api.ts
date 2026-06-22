@@ -96,65 +96,6 @@ export async function request<TResponse, TBody = unknown>(
 
   var res = await fetch(url, init);
 
-  if (res.status === 401) {
-
-    const refreshRes = await fetch(
-      `${API_BASE_URL}/api/v1/auth/refresh`,
-      {
-        method: "POST",
-        credentials: "include",
-      }
-    );
-
-    if (!refreshRes.ok) {
-      throw new Error("Session expired");
-    }
-
-    res = await fetch(url, init);
-  }
-  
-  if(res.status === 401) {
-    console.warn("[API] Unauthorized, attempting to refresh token...");
-    const refreshRes = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    if(refreshRes.ok) {
-      // Retry original request
-      res = await fetch(url, init);
-    }
-    else {
-      console.warn("[API] Refresh token failed, attempting to login...");
-      const loginRes = await fetch(`${API_BASE_URL}/api/v1/auth/login-normal`, {
-        method: "POST",
-        body: JSON.stringify({
-          username: "admin",
-          password: "admin",
-      }),  
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if(loginRes.ok) {
-        // Retry original request
-        res = await fetch(url, init);
-      }
-      else {
-        throw new ApiError({
-          status: refreshRes.status,
-          message: "Unauthorized and refresh failed",
-          details: {
-            refreshError: await refreshRes.json(),
-            loginError: await loginRes.json(),
-          },
-          
-        });
-      }
-    }
-  }
-
   const json: ApiResponse<TResponse> = await res.json();
   
   if (devMode) {
