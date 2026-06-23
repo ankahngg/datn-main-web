@@ -94,7 +94,40 @@ export async function request<TResponse, TBody = unknown>(
     console.log("[API]", method, url, body);
   }
 
+  const expireIn = localStorage.getItem("access_token_expire_in");
+  if (expireIn == null || Number(expireIn) < Date.now()) {
+    console.log("[API] Access token expired or not found, Login...");
+    console.log("[API] Using credentials:", process.env.NEXT_PUBLIC_USERNAME, process.env.NEXT_PUBLIC_PASSWORD);
+    const loginRes = await fetch(`${API_BASE_URL}/api/v1/auth/login-normal`, {
+      method: "POST",
+      body: JSON.stringify({
+        username: process.env.NEXT_PUBLIC_USERNAME,
+        password: process.env.NEXT_PUBLIC_PASSWORD
+      }),
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (loginRes.ok) {
+      console.log("[API] Logged in successfully");
+      const data = await loginRes.json();
+      const maxAgeInSeconds = 10* 60; // 10 minutes
+      localStorage.setItem("access_token_expire_in", String(Date.now() + maxAgeInSeconds * 1000));
+    }
+    else {
+      console.error("[API] Login failed with status:", loginRes.status);
+      throw new ApiError({
+        status: loginRes.status,
+        message: "Login failed",
+      });
+    }
+  }
+
   var res = await fetch(url, init);
+
+
 
   const json: ApiResponse<TResponse> = await res.json();
   
