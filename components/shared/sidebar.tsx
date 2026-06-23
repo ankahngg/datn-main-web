@@ -47,7 +47,7 @@ function Leftbar() {
               </div>
                 <div className="italic">Múi giờ: GMT+7 (Việt Nam)</div>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+            {/* <SidebarMenuItem>
               <SidebarMenuButton asChild
               isActive={pathname === "/dashboard"}
               >
@@ -56,7 +56,7 @@ function Leftbar() {
                   Trang chủ
                 </Link>
               </SidebarMenuButton>
-            </SidebarMenuItem>
+            </SidebarMenuItem> */}
             <SidebarMenuItem>
               <SidebarMenuButton asChild
                   isActive={pathname === "/assets"}
